@@ -40,7 +40,7 @@ public class HomeController {
             List<RecommendationDto> recommendations = recommendationService.getRecommendationsForUser(user);
 
             List<ProjectPreviewDto> recommendedProjects = recommendations.stream()
-                    .map(rec -> ProjectPreviewDto.fromProject(rec.getProject()))
+                    .map(rec -> ProjectPreviewDto.fromProject(rec.project())) // Исправлено на rec.project()
                     .limit(20)
                     .collect(Collectors.toList());
 

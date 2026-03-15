@@ -2,15 +2,12 @@ package com.example.devprojects.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
 
-@Data
-public class UserLoginDto {
+public record UserLoginDto(
+        @NotBlank(message = "Email обязателен")
+        @Email(message = "Некорректный формат email")
+        String email,
 
-    @NotBlank(message = "Email обязателен")
-    @Email(message = "Некорректный формат email")
-    private String email;
-
-    @NotBlank(message = "Пароль обязателен")
-    private String password;
-}
+        @NotBlank(message = "Пароль обязателен")
+        String password
+) {}

@@ -12,8 +12,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.ArrayList;
 
 @Controller
 @RequiredArgsConstructor
@@ -35,7 +36,10 @@ public class AuthController {
 
     @GetMapping("/register")
     public String registerForm(Model model) {
-        model.addAttribute("userRegistrationDto", new UserRegistrationDto());
+        // Рекорды не имеют конструктора по умолчанию, передаем null/пустые списки
+        model.addAttribute("userRegistrationDto", new UserRegistrationDto(
+                null, null, null, null, null, null, null, new ArrayList<>(), new ArrayList<>()
+        ));
         return "auth/register";
     }
 
@@ -45,19 +49,19 @@ public class AuthController {
                                RedirectAttributes redirectAttributes,
                                Model model) {
 
-        log.info("Попытка регистрации пользователя: {}", registrationDto.getEmail());
+        log.info("Попытка регистрации пользователя: {}", registrationDto.email());
 
         if (bindingResult.hasErrors()) {
             log.warn("Ошибки валидации при регистрации: {}", bindingResult.getAllErrors());
             return "auth/register";
         }
 
-        if (!registrationDto.getPassword().equals(registrationDto.getConfirmPassword())) {
+        if (!registrationDto.password().equals(registrationDto.confirmPassword())) {
             bindingResult.rejectValue("confirmPassword", "error.user", "Пароли не совпадают");
             return "auth/register";
         }
 
-        if (userService.existsByEmail(registrationDto.getEmail())) {
+        if (userService.existsByEmail(registrationDto.email())) {
             bindingResult.rejectValue("email", "error.user", "Email уже используется");
             return "auth/register";
         }
@@ -65,7 +69,7 @@ public class AuthController {
         try {
             userService.registerNewUser(registrationDto);
 
-            log.info("Пользователь успешно зарегистрирован: {}", registrationDto.getEmail());
+            log.info("Пользователь успешно зарегистрирован: {}", registrationDto.email());
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Регистрация успешна! Теперь вы можете войти.");

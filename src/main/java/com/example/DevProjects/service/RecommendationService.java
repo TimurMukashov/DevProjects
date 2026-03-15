@@ -77,7 +77,7 @@ public class RecommendationService {
             }
         }
 
-        recommendations.sort((a, b) -> Double.compare(b.getScore(), a.getScore()));
+        recommendations.sort((a, b) -> Double.compare(b.score(), a.score()));
 
         logRecommendations(recommendations);
 
@@ -87,25 +87,7 @@ public class RecommendationService {
 
     // получить все открытые проекты с деталями
     private List<Project> getAllProjectsWithDetails() {
-        List<Project> projectsWithRoles = projectRepository.findAllOpenProjectsWithRoles();
-        List<Project> projectsWithSkills = projectRepository.findAllOpenProjectsWithSkills();
-
-        Map<Integer, Project> projectsMap = new HashMap<>();
-
-        for (Project p : projectsWithRoles) {
-            projectsMap.put(p.getId(), p);
-        }
-
-        for (Project p : projectsWithSkills) {
-            if (projectsMap.containsKey(p.getId())) {
-                Project existing = projectsMap.get(p.getId());
-                existing.setRequiredSkills(p.getRequiredSkills());
-            } else
-                projectsMap.put(p.getId(), p);
-
-        }
-
-        return new ArrayList<>(projectsMap.values());
+        return projectRepository.findAll();
     }
 
     // найти похожих пользователей на основе общих лайков и специализаций
@@ -442,9 +424,9 @@ public class RecommendationService {
             RecommendationDto rec = recommendations.get(i);
             log.info("  {}. {} - score: {:.3f} ({})",
                     i + 1,
-                    rec.getProject().getTitle(),
-                    rec.getScore(),
-                    rec.getExplanation());
+                    rec.project().getTitle(),
+                    rec.score(),
+                    rec.explanation());
         }
 
         if (recommendations.size() > 10)

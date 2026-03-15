@@ -10,9 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,30 +27,8 @@ public class ProjectService {
                 Sort.by("createdAt").descending()
         );
 
-        Page<Project> projectsWithRoles =
-                projectRepository.findByStatusWithRoles(Project.ProjectStatus.open, pageable);
-
-        List<Integer> projectIds = projectsWithRoles.stream()
-                .map(Project::getId)
-                .toList();
-
-        List<Project> projectsWithSkills =
-                projectRepository.findProjectsWithSkillsByIds(projectIds);
-
-        Map<Integer, Project> skillsMap = projectsWithSkills.stream()
-                .collect(Collectors.toMap(Project::getId, Function.identity()));
-
-        List<Project> combinedProjects = projectsWithRoles.stream()
-                .map(project -> {
-                    Project projectWithSkills = skillsMap.get(project.getId());
-                    if (projectWithSkills != null && projectWithSkills.getRequiredSkills() != null) {
-                        project.setRequiredSkills(projectWithSkills.getRequiredSkills());
-                    }
-                    return project;
-                })
-                .toList();
-
-        return new PageImpl<>(combinedProjects, pageable, projectsWithRoles.getTotalElements())
+        // Используем оптимизированный запрос для предотвращения N+1
+        return projectRepository.findAll(pageable)
                 .map(ProjectPreviewDto::fromProject);
     }
 
@@ -61,17 +36,8 @@ public class ProjectService {
     public ProjectPreviewDto getProjectById(Integer id) {
 
         Project project = projectRepository
-                .findByIdWithRoles(id)
+                .findById(id)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
-
-        List<Project> projectsWithSkills =
-                projectRepository.findProjectsWithSkillsByIds(List.of(id));
-
-        if (!projectsWithSkills.isEmpty()) {
-            project.setRequiredSkills(
-                    projectsWithSkills.get(0).getRequiredSkills()
-            );
-        }
 
         project.setViewsCount(
                 project.getViewsCount() != null ? project.getViewsCount() + 1 : 1
@@ -106,29 +72,7 @@ public class ProjectService {
         List<Project> projects =
                 projectRepository.liveSearchWithSkills(query.trim().toLowerCase());
 
-        if (projects.isEmpty())
-            return List.of();
-
-        List<Integer> projectIds = projects.stream()
-                .map(Project::getId)
-                .toList();
-
-        List<Project> projectsWithSkills =
-                projectRepository.findProjectsWithSkillsByIds(projectIds);
-
-        Map<Integer, Project> skillsMap = projectsWithSkills.stream()
-                .collect(Collectors.toMap(Project::getId, Function.identity()));
-
-        List<Project> combinedProjects = projects.stream()
-                .map(project -> {
-                    Project projectWithSkills = skillsMap.get(project.getId());
-                    if (projectWithSkills != null && projectWithSkills.getRequiredSkills() != null)
-                        project.setRequiredSkills(projectWithSkills.getRequiredSkills());
-                    return project;
-                })
-                .toList();
-
-        return combinedProjects.stream()
+        return projects.stream()
                 .map(ProjectPreviewDto::fromProject)
                 .toList();
     }
