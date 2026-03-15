@@ -6,7 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.io.Serializable;
-import java.math.BigDecimal;  // Добавить импорт
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,6 +32,7 @@ public class UserSpecialization {
     @Column(name = "years_of_experience", precision = 4, scale = 1)
     private BigDecimal yearsOfExperience;
 
+    @Builder.Default
     @Column(name = "is_primary")
     private Boolean isPrimary = false;
 

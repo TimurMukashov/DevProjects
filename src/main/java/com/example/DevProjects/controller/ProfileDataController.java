@@ -55,7 +55,8 @@ public class ProfileDataController {
                         p.getId(),
                         p.getName(),
                         p.getDisplayName(),
-                        p.getDescription()))
+                        p.getDescription(),
+                        p.getSortOrder()))
                 .collect(Collectors.toList());
     }
 }

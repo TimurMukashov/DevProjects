@@ -29,7 +29,7 @@ public class UserService {
 
     @Transactional
     public User registerNewUser(UserRegistrationDto registrationDto) {
-
+        // У рекордов теперь методы без get: password() и confirmPassword()
         if (!registrationDto.password().equals(registrationDto.confirmPassword()))
             throw new IllegalArgumentException("Пароли не совпадают");
 
@@ -56,8 +56,9 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
-        if (registrationDto.specializations() != null && !registrationDto.specializations().isEmpty()) {
-            for (UserRegistrationDto.SpecializationDto specDto : registrationDto.specializations()) {
+        // Обработка специализаций
+        if (registrationDto.specializations() != null) {
+            for (var specDto : registrationDto.specializations()) {
                 if (specDto.specializationId() != null) {
                     Specialization specialization = entityManager.getReference(
                             Specialization.class, specDto.specializationId());
@@ -77,8 +78,9 @@ public class UserService {
             }
         }
 
-        if (registrationDto.skills() != null && !registrationDto.skills().isEmpty()) {
-            for (UserRegistrationDto.SkillDto skillDto : registrationDto.skills()) {
+        // Обработка навыков
+        if (registrationDto.skills() != null) {
+            for (var skillDto : registrationDto.skills()) {
                 if (skillDto.skillId() != null && skillDto.proficiencyLevelId() != null) {
                     Skill skill = entityManager.getReference(Skill.class, skillDto.skillId());
                     ProficiencyLevel level = entityManager.getReference(
@@ -118,11 +120,5 @@ public class UserService {
     public User getUserWithAllData(String email) {
         return userRepository.findByEmailWithAllData(email)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден: " + email));
-    }
-
-    @Transactional(readOnly = true)
-    public User getUserWithAllData(Integer userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден с id: " + userId));
     }
 }

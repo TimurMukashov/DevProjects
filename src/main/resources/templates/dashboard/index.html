@@ -37,34 +37,25 @@
 
 <div class="container my-5">
     <div class="row">
-        <!-- Боковая панель с профилем -->
         <div class="col-md-4">
             <div class="card profile-card">
                 <div class="card-body text-center">
                     <div class="profile-avatar mb-3">
-                        <!-- Аватар -->
                         <div th:if="${user.avatarUrl != null}" class="mb-3">
-                            <img th:src="@{${user.avatarUrl}}"
-                                 class="rounded-circle img-fluid"
-                                 alt="Avatar">
+                            <img th:src="@{${user.avatarUrl}}" class="rounded-circle img-fluid" alt="Avatar">
                         </div>
                         <div th:unless="${user.avatarUrl != null}"
                              class="avatar-placeholder rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
-                            <span th:text="${user.firstName != null ? user.firstName.charAt(0) : '?'} +
-                                           (${user.lastName != null ? user.lastName.charAt(0) : '?'})"></span>
+                            <span th:text="${user.firstName != null ? user.firstName.charAt(0) : '?'} + (${user.lastName != null ? user.lastName.charAt(0) : '?'})"></span>
                         </div>
                     </div>
 
-                    <h3 class="mb-1" th:text="${user.firstName + ' ' + user.lastName}">Тимур Тимуров</h3>
+                    <h3 class="mb-1" th:text="${user.firstName + ' ' + user.lastName}">Имя Фамилия</h3>
                     <p class="text-muted mb-2" th:text="${user.email}">email@example.com</p>
-
-                    <!-- ИСПРАВЛЕНО: отображение роли -->
                     <p class="mb-2">
-                        <span class="badge bg-secondary" th:text="${roleName}">Пользователь</span>
+                        <span class="badge bg-secondary" th:text="${roleName}">Роль</span>
                     </p>
-
                     <p th:if="${user.bio != null}" class="text-muted mt-3" th:text="${user.bio}">О себе</p>
-
                     <div class="mt-3">
                         <a href="/dashboard/profile" class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-pencil me-1"></i>Редактировать профиль
@@ -73,140 +64,58 @@
                 </div>
             </div>
 
-            <!-- Блок со специализациями -->
-            <div class="card mt-4" th:if="${user.specializations != null}">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-briefcase me-2"></i>Специализации
-                    </h5>
-                </div>
+            <div class="card mt-4" th:if="${user.specializations != null and !user.specializations.isEmpty()}">
+                <div class="card-header"><h5 class="mb-0"><i class="bi bi-briefcase me-2"></i>Специализации</h5></div>
                 <div class="card-body">
-                    <div class="specializations-list">
-                        <div th:each="spec : ${user.specializations}" class="specialization-item mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong th:text="${spec.specialization != null ? spec.specialization.name : 'Не указано'}">Frontend Developer</strong>
-                                    <span th:if="${spec.isPrimary}" class="badge bg-primary ms-2">Основная</span>
-                                </div>
-                                <!-- ИСПРАВЛЕНО: форматирование лет для специализаций -->
-                                <span class="text-muted"
-                                      th:if="${spec.yearsOfExperience != null}"
-                                      th:text="${T(com.example.devprojects.util.DateUtils).formatYears(spec.yearsOfExperience)}">5 лет</span>
-                                <span class="text-muted" th:unless="${spec.yearsOfExperience != null}">0 лет</span>
-                            </div>
+                    <div th:each="spec : ${user.specializations}" class="specialization-item mb-2 d-flex justify-content-between">
+                        <div>
+                            <strong th:text="${spec.specialization.name}">Специальность</strong>
+                            <span th:if="${spec.isPrimary}" class="badge bg-primary ms-2">Осн.</span>
                         </div>
+                        <span class="text-muted" th:text="${T(com.example.devprojects.util.DateUtils).formatYears(spec.yearsOfExperience)}">0 лет</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Заглушка для специализаций -->
-            <div class="card mt-4" th:unless="${user.specializations != null and !user.specializations.isEmpty()}">
-                <div class="card-body text-center text-muted">
-                    <i class="bi bi-briefcase fs-1"></i>
-                    <p class="mt-2">Специализации не указаны</p>
-                </div>
-            </div>
-
-            <!-- Блок с навыками -->
-            <div class="card mt-4" th:if="${user.skills != null}">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="bi bi-code-square me-2"></i>Навыки
-                    </h5>
-                </div>
+            <div class="card mt-4" th:if="${user.skills != null and !user.skills.isEmpty()}">
+                <div class="card-header"><h5 class="mb-0"><i class="bi bi-code-square me-2"></i>Навыки</h5></div>
                 <div class="card-body">
-                    <div class="skills-list">
-                        <div th:each="skill : ${user.skills}" class="skill-item mb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong th:text="${skill.skill != null ? skill.skill.name : 'Не указано'}">JavaScript</strong>
-                                </div>
-                                <div>
-                                    <span class="badge bg-info" th:text="${skill.proficiencyLevel != null ? skill.proficiencyLevel.displayName : 'Не указан'}">Продвинутый</span>
-                                    <!-- ИСПРАВЛЕНО: форматирование лет для навыков -->
-                                    <span class="text-muted ms-2"
-                                          th:if="${skill.yearsOfExperience != null}"
-                                          th:text="${T(com.example.devprojects.util.DateUtils).formatYears(skill.yearsOfExperience)}">3 года</span>
-                                    <span class="text-muted ms-2" th:unless="${skill.yearsOfExperience != null}">0 лет</span>
-                                </div>
-                            </div>
+                    <div th:each="skill : ${user.skills}" class="skill-item mb-2 d-flex justify-content-between align-items-center">
+                        <strong th:text="${skill.skill.name}">Навык</strong>
+                        <div>
+                            <span class="badge bg-info" th:text="${skill.proficiencyLevel.displayName}">Уровень</span>
+                            <span class="text-muted ms-2" th:text="${T(com.example.devprojects.util.DateUtils).formatYears(skill.yearsOfExperience)}">0 лет</span>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Заглушка для навыков -->
-            <div class="card mt-4" th:unless="${user.skills != null and !user.skills.isEmpty()}">
-                <div class="card-body text-center text-muted">
-                    <i class="bi bi-code-square fs-1"></i>
-                    <p class="mt-2">Навыки не указаны</p>
                 </div>
             </div>
         </div>
 
-        <!-- Основной контент -->
         <div class="col-md-8">
             <div class="welcome-card card mb-4">
                 <div class="card-body">
-                    <h4 class="mb-3">Добро пожаловать в личный кабинет!</h4>
-                    <p class="text-muted">Здесь будет отображаться ваша активность, проекты и заявки.</p>
-
+                    <h4 class="mb-3">Добро пожаловать!</h4>
+                    <p class="text-muted">Здесь будет ваша активность.</p>
                     <div class="stats-grid mt-4">
-                        <div class="stat-item">
-                            <div class="stat-value">0</div>
-                            <div class="stat-label">Мои проекты</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">0</div>
-                            <div class="stat-label">Заявки</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">0</div>
-                            <div class="stat-label">В избранном</div>
-                        </div>
+                        <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Проекты</div></div>
+                        <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Заявки</div></div>
+                        <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Избранное</div></div>
                     </div>
                 </div>
             </div>
-
             <div class="row">
                 <div class="col-md-6 mb-4">
-                    <div class="action-card card h-100">
-                        <div class="card-body text-center">
-                            <div class="action-icon">
-                                <i class="bi bi-search"></i>
-                            </div>
-                            <h5>Найти проекты</h5>
-                            <p class="text-muted">Ищите проекты по специализациям и навыкам</p>
-                            <a href="/" class="btn btn-outline-primary">Перейти к поиску</a>
-                        </div>
-                    </div>
+                    <div class="action-card card h-100"><div class="card-body text-center"><i class="bi bi-search fs-1 mb-3 text-primary"></i><h5>Найти проекты</h5><a href="/" class="btn btn-outline-primary">Поиск</a></div></div>
                 </div>
                 <div class="col-md-6 mb-4">
-                    <div class="action-card card h-100">
-                        <div class="card-body text-center">
-                            <div class="action-icon">
-                                <i class="bi bi-plus-circle"></i>
-                            </div>
-                            <h5>Создать проект</h5>
-                            <p class="text-muted">Создание проектов скоро будет доступно</p>
-                            <button class="btn btn-outline-secondary" disabled>Создать</button>
-                        </div>
-                    </div>
+                    <div class="action-card card h-100"><div class="card-body text-center"><i class="bi bi-plus-circle fs-1 mb-3 text-muted"></i><h5>Создать проект</h5><button class="btn btn-outline-secondary" disabled>Скоро</button></div></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Подвал -->
-<footer class="bg-light py-4 mt-5">
-    <div class="container text-center">
-        <p class="text-muted mb-0">
-            &copy; 2026 DevProjects. Платформа для поиска команды в IT проекты.
-        </p>
-    </div>
-</footer>
-
+<footer class="bg-light py-4 mt-5"><div class="container text-center"><p class="text-muted mb-0">&copy; 2026 DevProjects.</p></div></footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

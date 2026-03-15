@@ -36,9 +36,11 @@ public class Project {
 
     private LocalDate deadline;
 
+    @Builder.Default
     @Column(name = "views_count")
     private Integer viewsCount = 0;
 
+    @Builder.Default
     @Column(name = "applications_count")
     private Integer applicationsCount = 0;
 
@@ -61,7 +63,6 @@ public class Project {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<ProjectView> views = new ArrayList<>();
-
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

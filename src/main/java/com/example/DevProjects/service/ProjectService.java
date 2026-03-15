@@ -20,59 +20,39 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public Page<ProjectPreviewDto> getOpenProjects(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by("createdAt").descending()
-        );
-
-        // Используем оптимизированный запрос для предотвращения N+1
-        return projectRepository.findAll(pageable)
+        // Используем наш новый метод с FETCH JOIN — это убирает проблему N+1
+        return projectRepository.findByStatusWithDetails(Project.ProjectStatus.open, pageable)
                 .map(ProjectPreviewDto::fromProject);
     }
 
     @Transactional
     public ProjectPreviewDto getProjectById(Integer id) {
-
-        Project project = projectRepository
-                .findById(id)
+        // Достаем сразу со всеми деталями (автор, роли, навыки)
+        Project project = projectRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
-        project.setViewsCount(
-                project.getViewsCount() != null ? project.getViewsCount() + 1 : 1
-        );
+        project.setViewsCount(project.getViewsCount() != null ? project.getViewsCount() + 1 : 1);
 
         return ProjectPreviewDto.fromProject(project);
     }
 
     @Transactional(readOnly = true)
     public Page<ProjectPreviewDto> search(String query, int page, int size) {
+        if (query == null || query.isBlank()) return Page.empty();
 
-        if (query == null || query.isBlank())
-            return Page.empty();
-
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by("createdAt").descending()
-        );
-
-        return projectRepository
-                .search(query.trim().toLowerCase(), pageable)
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return projectRepository.search(query.trim().toLowerCase(), pageable)
                 .map(ProjectPreviewDto::fromProject);
     }
 
     @Transactional(readOnly = true)
     public List<ProjectPreviewDto> liveSearch(String query) {
+        if (query == null || query.trim().length() < 2) return List.of();
 
-        if (query == null || query.trim().length() < 2)
-            return List.of();
-
-        List<Project> projects =
-                projectRepository.liveSearchWithSkills(query.trim().toLowerCase());
-
-        return projects.stream()
+        return projectRepository.liveSearchWithSkills(query.trim().toLowerCase())
+                .stream()
                 .map(ProjectPreviewDto::fromProject)
                 .toList();
     }

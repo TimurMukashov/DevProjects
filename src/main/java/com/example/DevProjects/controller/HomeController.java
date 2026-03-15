@@ -40,7 +40,7 @@ public class HomeController {
             List<RecommendationDto> recommendations = recommendationService.getRecommendationsForUser(user);
 
             List<ProjectPreviewDto> recommendedProjects = recommendations.stream()
-                    .map(rec -> ProjectPreviewDto.fromProject(rec.project())) // Исправлено на rec.project()
+                    .map(rec -> ProjectPreviewDto.fromProject(rec.project()))
                     .limit(20)
                     .collect(Collectors.toList());
 
@@ -67,14 +67,10 @@ public class HomeController {
     }
 
     @GetMapping("/recommended")
-    public String recommendedProjects(
-            @AuthenticationPrincipal CustomUserDetails currentUser,
-            Model model) {
-
+    public String recommendedProjects(@AuthenticationPrincipal CustomUserDetails currentUser) {
         if (currentUser == null) {
             return "redirect:/login";
         }
-
         return "redirect:/?useRecommendations=true";
     }
 }

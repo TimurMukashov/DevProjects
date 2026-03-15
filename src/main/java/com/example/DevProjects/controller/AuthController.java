@@ -36,7 +36,7 @@ public class AuthController {
 
     @GetMapping("/register")
     public String registerForm(Model model) {
-        // Рекорды не имеют конструктора по умолчанию, передаем null/пустые списки
+        // Рекорды требуют полной инициализации в конструкторе
         model.addAttribute("userRegistrationDto", new UserRegistrationDto(
                 null, null, null, null, null, null, null, new ArrayList<>(), new ArrayList<>()
         ));
@@ -52,7 +52,6 @@ public class AuthController {
         log.info("Попытка регистрации пользователя: {}", registrationDto.email());
 
         if (bindingResult.hasErrors()) {
-            log.warn("Ошибки валидации при регистрации: {}", bindingResult.getAllErrors());
             return "auth/register";
         }
 
@@ -68,19 +67,11 @@ public class AuthController {
 
         try {
             userService.registerNewUser(registrationDto);
-
-            log.info("Пользователь успешно зарегистрирован: {}", registrationDto.email());
-
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Регистрация успешна! Теперь вы можете войти.");
-
+            redirectAttributes.addFlashAttribute("successMessage", "Регистрация успешна! Теперь вы можете войти.");
             return "redirect:/login";
-
         } catch (Exception e) {
-            log.error("Ошибка при регистрации пользователя: {}", e.getMessage(), e);
-            model.addAttribute("userRegistrationDto", registrationDto);
+            log.error("Ошибка при регистрации", e);
             model.addAttribute("errorMessage", "Ошибка при регистрации: " + e.getMessage());
-
             return "auth/register";
         }
     }

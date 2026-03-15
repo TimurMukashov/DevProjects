@@ -22,42 +22,23 @@ public class DashboardController {
 
     @GetMapping
     public String dashboard(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
-        log.debug("Доступ к дашборду пользователя: {}", currentUser.getUsername());
-
         model.addAttribute("user", currentUser.getUser());
         model.addAttribute("fullName", currentUser.getFullName());
-
-        String roleName = currentUser.getUser().getRole() != null
-                ? currentUser.getUser().getRole().getName()
-                : "Пользователь";
-        model.addAttribute("roleName", roleName);
-
+        model.addAttribute("roleName", currentUser.getUser().getRole() != null ? currentUser.getUser().getRole().getName() : "Пользователь");
         return "dashboard/index";
     }
 
     @GetMapping("/profile")
     public String profile(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
-        log.debug("Просмотр профиля пользователя: {}", currentUser.getUsername());
-
         model.addAttribute("user", currentUser.getUser());
-
-        String roleName = currentUser.getUser().getRole() != null
-                ? currentUser.getUser().getRole().getName()
-                : "Пользователь";
-        model.addAttribute("roleName", roleName);
-
+        model.addAttribute("roleName", currentUser.getUser().getRole() != null ? currentUser.getUser().getRole().getName() : "Пользователь");
         model.addAttribute("dateUtils", new DateUtils());
-
         return "dashboard/profile";
     }
 
     @GetMapping("/edit")
     public String editProfile(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
-        log.debug("Редактирование профиля пользователя: {}", currentUser.getUsername());
-
         model.addAttribute("user", currentUser.getUser());
-        model.addAttribute("dateUtils", new DateUtils());
-
         return "dashboard/edit";
     }
 
@@ -66,6 +47,8 @@ public class DashboardController {
                                 @ModelAttribute ProfileEditDto profileEditDto,
                                 RedirectAttributes redirectAttributes) {
         try {
+            // В будущем здесь будет вызов userService.updateProfile
+            log.info("Обновление профиля для пользователя: {}", currentUser.getUsername());
             redirectAttributes.addFlashAttribute("successMessage", "Профиль успешно обновлен");
         } catch (Exception e) {
             log.error("Ошибка при обновлении профиля", e);
