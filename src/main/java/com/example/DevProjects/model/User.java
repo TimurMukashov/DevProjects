@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -23,27 +22,48 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(unique = true, nullable = false, length = 255)
+    @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "first_name", nullable = false, length = 100)
+    @Column(name = "first_name")
     private String firstName;
 
-    @Column(name = "last_name", nullable = false, length = 100)
+    @Column(name = "last_name")
     private String lastName;
 
     @Column(columnDefinition = "TEXT")
     private String bio;
 
-    @Column(name = "avatar_url", columnDefinition = "TEXT")
+    @Column(name = "avatar_url")
     private String avatarUrl;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id", nullable = false)
+    @JoinColumn(name = "role_id")
     private Role role;
+
+    // ВОЗВРАЩЕНО ОРИГИНАЛЬНОЕ ИМЯ
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
+    @Builder.Default
+    private Set<Project> projects = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
+    private Set<Application> applications = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
+    private Set<UserSpecialization> specializations = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
+    private Set<UserSkill> skills = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
+    private Set<Favorite> favorites = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -53,45 +73,7 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    @BatchSize(size = 20)
-    private Set<Project> projects = new HashSet<>();
-
-    @OneToMany(mappedBy = "specialist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    @BatchSize(size = 20)
-    private Set<Application> applications = new HashSet<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    @BatchSize(size = 20)
-    private Set<UserSpecialization> specializations = new HashSet<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    @BatchSize(size = 20)
-    private Set<UserSkill> skills = new HashSet<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    @BatchSize(size = 20)
-    private Set<Favorite> favorites = new HashSet<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    @BatchSize(size = 20)
-    private Set<Notification> notifications = new HashSet<>();
-
     public String getFullName() {
-        return firstName + " " + lastName;
-    }
-
-    public boolean isAdmin() {
-        return role != null && "admin".equals(role.getName());
-    }
-
-    public boolean isModerator() {
-        return role != null && "moderator".equals(role.getName());
+        return (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
     }
 }

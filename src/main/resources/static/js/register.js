@@ -1,14 +1,24 @@
 let specializations = [];
 let skills = [];
 let proficiencyLevels = [];
-// let avatarFile = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     loadReferenceData();
 
+    // Логика превью аватара
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarPreview = document.getElementById('avatarPreview');
+    if (avatarInput && avatarPreview) {
+        avatarInput.addEventListener('change', function() {
+            const [file] = this.files;
+            if (file) {
+                avatarPreview.src = URL.createObjectURL(file);
+            }
+        });
+    }
+
     document.getElementById('addSpecialization').addEventListener('click', addSpecialization);
     document.getElementById('addSkill').addEventListener('click', addSkill);
-    // document.getElementById('addAvatar').addEventListener('click', addAvatar);
     document.getElementById('registrationForm').addEventListener('submit', prepareFormSubmit);
 });
 
@@ -56,45 +66,6 @@ function addSkill() {
     });
 }
 
-/*
-function addAvatar() {
-    const oldAvatar = document.querySelector('.avatar-item');
-    if (oldAvatar) {
-        oldAvatar.remove();
-    }
-
-    const template = document.getElementById('avatarTemplate');
-    const clone = template.content.cloneNode(true);
-    document.getElementById('avatar-container').appendChild(clone);
-
-    const newItem = document.querySelector('.avatar-item:last-child');
-
-    newItem.querySelector('.avatar-file').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            // Проверяем размер файла (10MB)
-            if (file.size > 10 * 1024 * 1024) {
-                alert('Файл слишком большой. Максимальный размер 10MB');
-                e.target.value = '';
-                return;
-            }
-            // Проверяем тип файла
-            if (!file.type.startsWith('image/')) {
-                alert('Можно загружать только изображения');
-                e.target.value = '';
-                return;
-            }
-            avatarFile = file;
-        }
-    });
-
-    newItem.querySelector('.remove-item').addEventListener('click', function() {
-        newItem.remove();
-        avatarFile = null;
-    });
-}
-*/
-
 function fillSpecializationSelect(select) {
     while (select.options.length > 1) {
         select.remove(1);
@@ -129,6 +100,7 @@ function fillSkillSelect(select) {
 }
 
 function fillLevelSelect(select) {
+    if (!select) return; // Проверка на случай отсутствия элемента
     while (select.options.length > 1)
         select.remove(1);
 
@@ -146,67 +118,58 @@ function prepareFormSubmit(e) {
     document.querySelectorAll('input[name^="specializations"]').forEach(el => el.remove());
     document.querySelectorAll('input[name^="skills"]').forEach(el => el.remove());
 
+    const seenSpecs = new Set();
+    const seenSkills = new Set();
+    let hasDuplicates = false;
+
+    // Сбор и проверка специализаций
     document.querySelectorAll('.specialization-item').forEach((item, index) => {
         const select = item.querySelector('.specialization-select');
         const experience = item.querySelector('.specialization-experience');
         const isPrimary = item.querySelector('.specialization-primary');
 
         if (select.value && select.value !== '') {
-            addHiddenField(`specializations[${index}].specializationId`, select.value);
-            addHiddenField(`specializations[${index}].yearsOfExperience`, experience.value || '0');
-            addHiddenField(`specializations[${index}].primary`, isPrimary.checked);
-            console.log(`Добавлена специализация ID: ${select.value}`);
+            const specId = select.value;
+            if (seenSpecs.has(specId)) {
+                hasDuplicates = true;
+                select.classList.add('is-invalid');
+            } else {
+                seenSpecs.add(specId);
+                select.classList.remove('is-invalid');
+                addHiddenField(`specializations[${index}].specializationId`, select.value);
+                addHiddenField(`specializations[${index}].yearsOfExperience`, experience.value || '0');
+                addHiddenField(`specializations[${index}].primary`, isPrimary.checked);
+            }
         }
     });
 
+    // Сбор и проверка навыков
     document.querySelectorAll('.skill-item').forEach((item, index) => {
         const skillSelect = item.querySelector('.skill-select');
         const levelSelect = item.querySelector('.skill-level');
         const experience = item.querySelector('.skill-experience');
 
-        if (skillSelect.value && skillSelect.value !== '' &&
-            levelSelect.value && levelSelect.value !== '') {
-            addHiddenField(`skills[${index}].skillId`, skillSelect.value);
-            addHiddenField(`skills[${index}].proficiencyLevelId`, levelSelect.value);
-            addHiddenField(`skills[${index}].yearsOfExperience`, experience.value || '0');
-            console.log(`Добавлен навык ID: ${skillSelect.value}, уровень: ${levelSelect.value}`);
+        if (skillSelect.value && skillSelect.value !== '') {
+            const skillId = skillSelect.value;
+            if (seenSkills.has(skillId)) {
+                hasDuplicates = true;
+                skillSelect.classList.add('is-invalid');
+            } else {
+                seenSkills.add(skillId);
+                skillSelect.classList.remove('is-invalid');
+                addHiddenField(`skills[${index}].skillId`, skillSelect.value);
+                addHiddenField(`skills[${index}].proficiencyLevelId`, levelSelect.value);
+                addHiddenField(`skills[${index}].yearsOfExperience`, experience.value || '0');
+            }
         }
     });
 
-    /*
-    if (avatarFile) {
-        console.log('Добавляем аватар:', avatarFile.name);
-        const formData = new FormData(e.target);
-
-        document.querySelectorAll('input[type="hidden"]').forEach(input => {
-            formData.append(input.name, input.value);
-        });
-
-        formData.append('avatar', avatarFile);
-
-        fetch('/register', {
-            method: 'POST',
-            body: formData
-        }).then(response => {
-            if (response.redirected) {
-                window.location.href = response.url;
-            } else {
-                response.text().then(text => {
-                    console.error('Ошибка регистрации:', text);
-                    alert('Ошибка при регистрации.');
-                });
-            }
-        }).catch(error => {
-            console.error('Ошибка отправки:', error);
-            alert('Ошибка при отправке формы');
-        });
-    } else {
-        console.log('Отправка без аватара');
-        e.target.submit();
+    if (hasDuplicates) {
+        alert('Пожалуйста, удалите дублирующиеся специализации или навыки.');
+        return;
     }
-    */
 
-    console.log('Отправка без аватара');
+    console.log('Отправка формы...');
     e.target.submit();
 }
 

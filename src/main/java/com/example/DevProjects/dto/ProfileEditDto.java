@@ -5,6 +5,5 @@ import org.springframework.web.multipart.MultipartFile;
 public record ProfileEditDto(
         String firstName,
         String lastName,
-        String bio,
-        MultipartFile avatar
+        String bio
 ) {}

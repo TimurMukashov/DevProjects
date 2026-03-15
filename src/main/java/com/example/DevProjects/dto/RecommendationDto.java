@@ -4,8 +4,9 @@ import com.example.devprojects.model.Project;
 
 public record RecommendationDto(
         Project project,
-        double score,
-        double contentScore,
-        double collaborativeScore,
+        Double score,
+        Double skillScore,
+        Double collaborativeScore,
         String explanation
-) {}
+) {
+}

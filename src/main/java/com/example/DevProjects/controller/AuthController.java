@@ -14,14 +14,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.ArrayList;
-
 @Controller
 @RequiredArgsConstructor
 @Slf4j
 public class AuthController {
 
     private final UserService userService;
+    // FileService полностью убран отсюда
 
     @GetMapping("/login")
     public String loginForm(@RequestParam(value = "error", required = false) String error,
@@ -36,10 +35,7 @@ public class AuthController {
 
     @GetMapping("/register")
     public String registerForm(Model model) {
-        // Рекорды требуют полной инициализации в конструкторе
-        model.addAttribute("userRegistrationDto", new UserRegistrationDto(
-                null, null, null, null, null, null, null, new ArrayList<>(), new ArrayList<>()
-        ));
+        model.addAttribute("userRegistrationDto", new UserRegistrationDto());
         return "auth/register";
     }
 
@@ -49,24 +45,26 @@ public class AuthController {
                                RedirectAttributes redirectAttributes,
                                Model model) {
 
-        log.info("Попытка регистрации пользователя: {}", registrationDto.email());
+        log.info("Попытка регистрации пользователя: {}", registrationDto.getEmail());
 
         if (bindingResult.hasErrors()) {
             return "auth/register";
         }
 
-        if (!registrationDto.password().equals(registrationDto.confirmPassword())) {
+        if (!registrationDto.getPassword().equals(registrationDto.getConfirmPassword())) {
             bindingResult.rejectValue("confirmPassword", "error.user", "Пароли не совпадают");
             return "auth/register";
         }
 
-        if (userService.existsByEmail(registrationDto.email())) {
+        if (userService.existsByEmail(registrationDto.getEmail())) {
             bindingResult.rejectValue("email", "error.user", "Email уже используется");
             return "auth/register";
         }
 
         try {
-            userService.registerNewUser(registrationDto);
+            // Файл больше не принимаем. Передаем null, а UserService сам поставит дефолтную картинку
+            userService.registerNewUser(registrationDto, null);
+
             redirectAttributes.addFlashAttribute("successMessage", "Регистрация успешна! Теперь вы можете войти.");
             return "redirect:/login";
         } catch (Exception e) {

@@ -1270,4 +1270,52 @@ footer .text-muted {
     }
 }
 
+.btn-pill {
+    border-radius: 50px !important; /* Делает кнопку идеально овальной */
+    padding: 0.6rem 2rem !important;
+    font-weight: 600 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-width: 2px !important;
+}
+
+/* Эффект при наведении для всех кнопок */
+.btn-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-pill:active {
+    transform: translateY(0);
+}
+
+/* Фиолетовая кнопка (Primary) */
+.btn-violet {
+    background-color: #6b46c1 !important;
+    border-color: #6b46c1 !important;
+    color: white !important;
+}
+
+.btn-violet:hover {
+    background-color: #553c9a !important;
+    border-color: #553c9a !important;
+}
+
+/* Очерченная фиолетовая кнопка (Outline) */
+.btn-outline-violet {
+    color: #6b46c1 !important;
+    border-color: #6b46c1 !important;
+    background-color: transparent !important;
+}
+
+.btn-outline-violet:hover {
+    background-color: #6b46c1 !important;
+    color: white !important;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');

@@ -90,13 +90,6 @@
         <span th:unless="${isRecommendations}">Открытые проекты</span>
     </h2>
 
-    <div id="searchLoading" class="text-center my-4" style="display: none;">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Загрузка...</span>
-        </div>
-        <p class="mt-2 text-muted">Поиск проектов...</p>
-    </div>
-
     <div id="searchResults" style="display: none; min-height: 500px;">
         <div class="row mb-3">
             <div class="col-12">
@@ -132,7 +125,7 @@
         <div class="row" th:unless="${#lists.isEmpty(projects)}">
             <div class="col-md-4 mb-4" th:each="project, iter : ${projects}">
                 <div class="project-card position-relative"
-                     th:onclick="'window.location.href=\'/projects/' + ${project.id} + '\''">
+                     th:onclick="'window.location.href=\'/projects/' + ${project.id()} + '\''">
 
                     <div th:if="${isRecommendations and recommendations != null and !recommendations.isEmpty()}"
                          class="recommendation-badge">
@@ -141,13 +134,13 @@
                     </div>
 
                     <div class="card-body">
-
                         <div class="d-flex justify-content-end">
-                            <span class="status-badge" th:text="${project.statusText()}"></span>
+                            <span th:class="'status-badge badge bg-' + ${project.statusColor()}"
+                                  th:text="${project.statusText()}"></span>
                         </div>
 
                         <h5 class="project-title">
-                            <a th:href="@{/projects/{id}(id=${project.id})}"
+                            <a th:href="@{/projects/{id}(id=${project.id()})}"
                                onclick="event.stopPropagation();"
                                th:text="${project.title()}"></a>
                         </h5>
@@ -169,9 +162,6 @@
                                   th:text="${skill.name()}">
                             </span>
                         </div>
-                        <div th:if="${project.skills() == null or project.skills().isEmpty()}" class="text-muted small mb-2">
-                            <i class="bi bi-info-circle"></i> Навыки не указаны
-                        </div>
 
                         <div class="project-meta">
                             <span class="author-info">
@@ -189,15 +179,6 @@
                                 </span>
                             </div>
                         </div>
-
-                        <div th:if="${isRecommendations and recommendations != null and !recommendations.isEmpty()}"
-                             class="debug-score">
-                            <small>
-                                <i class="bi bi-graph-up-arrow me-1" style="color: var(--primary-color);"></i>
-                                <span th:text="${recommendations[iter.index].explanation()}"></span>
-                            </small>
-                        </div>
-
                     </div>
                 </div>
             </div>
@@ -206,37 +187,64 @@
         <nav th:if="${!isRecommendations and totalPages > 1}" class="mt-5">
             <ul class="pagination justify-content-center">
                 <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-                    <a class="page-link"
-                       th:href="@{/(page=${currentPage - 1})}"
-                       aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
+                    <a class="page-link" th:href="@{/(page=${currentPage - 1})}">&laquo;</a>
                 </li>
-                <li class="page-item"
-                    th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
                     th:classappend="${i == currentPage} ? 'active'">
-                    <a class="page-link"
-                       th:href="@{/(page=${i})}"
-                       th:text="${i + 1}"></a>
+                    <a class="page-link" th:href="@{/(page=${i})}" th:text="${i + 1}"></a>
                 </li>
                 <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
-                    <a class="page-link"
-                       th:href="@{/(page=${currentPage + 1})}"
-                       aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
+                    <a class="page-link" th:href="@{/(page=${currentPage + 1})}">&raquo;</a>
                 </li>
             </ul>
         </nav>
-
     </div>
 </div>
 
+<template id="projectCardTemplate">
+    <div class="col-md-4 mb-4">
+        <div class="project-card position-relative">
+            <div class="card-body">
+                <div class="d-flex justify-content-end">
+                    <span class="status-badge badge"></span>
+                </div>
+                <h5 class="project-title">
+                    <a href="javascript:void(0);" onclick="event.stopPropagation();"></a>
+                </h5>
+                <p class="project-description"></p>
+                <div class="roles-container"></div>
+                <div class="skills-container"></div>
+                <div class="project-meta">
+                    <span class="author-info">
+                        <i class="bi bi-person"></i>
+                        <span class="author-name"></span>
+                    </span>
+                    <div class="stats-info">
+                        <span>
+                            <i class="bi bi-eye"></i>
+                            <span class="views-count"></span>
+                        </span>
+                        <span class="days-info" style="display: none;">
+                            <i class="bi bi-calendar3"></i>
+                            <span class="days-left"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="roleItemTemplate">
+    <div class="role-item">
+        <span class="role-name"></span>
+        <span class="role-count"></span>
+    </div>
+</template>
+
 <footer class="bg-light py-4 mt-5">
     <div class="container text-center">
-        <p class="text-muted mb-0">
-            &copy; 2026 DevProjects. Платформа для поиска команды в IT проекты.
-        </p>
+        <p class="text-muted mb-0">&copy; 2026 DevProjects.</p>
     </div>
 </footer>
 

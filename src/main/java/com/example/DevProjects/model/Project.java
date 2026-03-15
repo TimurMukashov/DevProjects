@@ -7,8 +7,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet; // Используем HashSet
-import java.util.Set;     // Используем Set вместо List
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "projects")
@@ -36,12 +36,12 @@ public class Project {
 
     private LocalDate deadline;
 
-    @Builder.Default
     @Column(name = "views_count")
+    @Builder.Default
     private Integer viewsCount = 0;
 
-    @Builder.Default
     @Column(name = "applications_count")
+    @Builder.Default
     private Integer applicationsCount = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -77,6 +77,10 @@ public class Project {
     }
 
     public String getAuthorFullName() {
-        return author != null ? author.getFirstName() + " " + author.getLastName() : "";
+        if (author == null) return "Автор не указан";
+        String first = author.getFirstName() != null ? author.getFirstName() : "";
+        String last = author.getLastName() != null ? author.getLastName() : "";
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? author.getEmail() : full;
     }
 }

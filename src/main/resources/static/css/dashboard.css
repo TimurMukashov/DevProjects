@@ -579,3 +579,37 @@ footer .text-muted {
 ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
 }
+
+.dashboard-actions .btn {
+    border-radius: 2rem; /* Одинаковая сильная округлость для всех кнопок */
+    padding: 0.6rem 2rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.dashboard-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Специфично для кнопки поиска */
+.btn-outline-primary {
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+.btn-outline-primary:hover {
+    background-color: #6366f1;
+    border-color: #6366f1;
+    color: white;
+}
+
+.btn-success {
+    background-color: #10b981;
+    border-color: #10b981;
+}
+
+.btn-success:hover {
+    background-color: #059669;
+    border-color: #059669;
+}

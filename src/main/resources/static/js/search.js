@@ -1,230 +1,99 @@
 class ProjectSearch {
     constructor() {
         this.searchInput = document.getElementById('searchInput');
-        this.searchForm = document.getElementById('searchForm');
         this.searchResults = document.getElementById('searchResults');
         this.regularProjects = document.getElementById('regularProjects');
         this.searchResultsContainer = document.getElementById('searchResultsContainer');
         this.searchNoResults = document.getElementById('searchNoResults');
         this.searchQuerySpan = document.getElementById('searchQuery');
         this.resultsCountSpan = document.getElementById('resultsCount');
-        this.clearSearchBtn = document.getElementById('clearSearchBtn');
-
         this.projectCardTemplate = document.getElementById('projectCardTemplate');
         this.roleItemTemplate = document.getElementById('roleItemTemplate');
-        this.skillItemTemplate = document.getElementById('skillItemTemplate');
-
         this.searchTimeout = null;
-        this.currentQuery = '';
-        this.debounceDelay = 400;
-        this.minQueryLength = 2;
-
         this.init();
     }
 
     init() {
         if (!this.searchInput) return;
-
-        this.searchInput.addEventListener('input', (e) => this.handleInput(e));
-
-        if (this.searchForm)
-            this.searchForm.addEventListener('submit', (e) => this.handleSubmit(e));
-
-        if (this.clearSearchBtn)
-            this.clearSearchBtn.addEventListener('click', () => this.clearSearch());
-    }
-
-    handleInput(e) {
-        const query = e.target.value.trim();
-
-        clearTimeout(this.searchTimeout);
-
-        if (query.length < this.minQueryLength) {
-            this.showRegularProjects();
-            this.currentQuery = '';
-            return;
-        }
-
-        this.searchTimeout = setTimeout(() => {
-            this.performSearch(query);
-        }, this.debounceDelay);
-    }
-
-    handleSubmit(e) {
-        e.preventDefault();
-
-        const query = this.searchInput.value.trim();
-
-        if (query.length >= this.minQueryLength) {
+        this.searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
             clearTimeout(this.searchTimeout);
-            this.performSearch(query);
-        }
+            if (query.length < 2) {
+                this.showRegular();
+                return;
+            }
+            this.searchTimeout = setTimeout(() => this.performSearch(query), 300);
+        });
     }
 
     async performSearch(query) {
-        this.currentQuery = query;
-
         try {
-            const response = await fetch(
-                `/api/search/live?query=${encodeURIComponent(query)}`
-            );
-
-            if (!response.ok)
-                throw new Error(`Search error: ${response.status}`);
-
+            const response = await fetch(`/api/search/live?query=${encodeURIComponent(query)}`);
             const projects = await response.json();
-
-            if (query !== this.currentQuery) return;
-
             this.displayResults(projects, query);
-
-        } catch (error) {
-            console.error('Search failed:', error);
-            if (query === this.currentQuery)
-                this.showError();
+        } catch (e) {
+            console.error(e);
         }
     }
 
     displayResults(projects, query) {
-        if (this.searchQuerySpan)
-            this.searchQuerySpan.textContent = `"${query}"`;
-
-        if (!projects || projects.length === 0) {
-            if (this.resultsCountSpan)
-                this.resultsCountSpan.textContent = 'найдено: 0';
-
-            this.searchResults.style.display = 'block';
-            this.searchNoResults.style.display = 'block';
-            this.searchResultsContainer.innerHTML = '';
-            this.regularProjects.style.display = 'none';
-            return;
-        }
-
-        if (this.resultsCountSpan)
-            this.resultsCountSpan.textContent = `найдено: ${projects.length}`;
-
         this.searchResultsContainer.innerHTML = '';
+        this.searchQuerySpan.textContent = `"${query}"`;
+        if (projects.length === 0) {
+            this.resultsCountSpan.textContent = 'найдено: 0';
+            this.searchNoResults.style.display = 'block';
+        } else {
+            this.resultsCountSpan.textContent = `найдено: ${projects.length}`;
+            this.searchNoResults.style.display = 'none';
+            projects.forEach(p => this.searchResultsContainer.appendChild(this.createCard(p)));
+        }
+        this.regularProjects.style.display = 'none';
+        this.searchResults.style.display = 'block';
+    }
 
-        projects.forEach(project => {
-            const card = this.createProjectCard(project);
-            this.searchResultsContainer.appendChild(card);
+    createCard(p) {
+        const clone = this.projectCardTemplate.content.cloneNode(true);
+        const card = clone.querySelector('.project-card');
+        const projectUrl = `/projects/${p.id}`;
+
+        // Устанавливаем клик на всю карточку
+        card.onclick = () => window.location.href = projectUrl;
+
+        const badge = clone.querySelector('.status-badge');
+        badge.textContent = p.statusText;
+        badge.className = `status-badge badge bg-${p.statusColor}`;
+
+        // ИСПРАВЛЕНО: Устанавливаем текст и корректную ссылку для заголовка
+        const titleLink = clone.querySelector('.project-title a');
+        titleLink.textContent = p.title;
+        titleLink.href = projectUrl;
+
+        clone.querySelector('.project-description').textContent = p.shortDescription;
+        clone.querySelector('.author-name').textContent = p.authorName;
+        clone.querySelector('.views-count').textContent = p.viewsCount;
+
+        const rolesCont = clone.querySelector('.roles-container');
+        p.roles.forEach(r => {
+            const roleEl = this.roleItemTemplate.content.cloneNode(true);
+            roleEl.querySelector('.role-name').textContent = r.specialization || r.title;
+            roleEl.querySelector('.role-count').textContent = `${r.filled}/${r.vacancies}`;
+            rolesCont.appendChild(roleEl);
         });
 
-        this.searchResults.style.display = 'block';
-        this.searchNoResults.style.display = 'none';
-        this.regularProjects.style.display = 'none';
+        const skillsCont = clone.querySelector('.skills-container');
+        p.skills.forEach(s => {
+            const span = document.createElement('span');
+            span.className = `skill-badge ${s.required ? 'required' : 'optional'}`;
+            span.textContent = s.name;
+            skillsCont.appendChild(span);
+        });
+
+        return clone;
     }
 
-    createProjectCard(project) {
-        const template = this.projectCardTemplate.content.cloneNode(true);
-        const card = template.querySelector('.project-card');
-
-        if (card)
-            card.setAttribute('onclick', `window.location.href='/projects/${project.id}'`);
-
-        const statusBadge = template.querySelector('.status-badge');
-        if (statusBadge)
-            statusBadge.textContent = project.statusText || 'Открыт';
-
-        const titleLink = template.querySelector('.project-title a');
-        if (titleLink) {
-            titleLink.textContent = this.escapeHtml(project.title || '');
-            titleLink.href = `/projects/${project.id}`;
-            titleLink.setAttribute('onclick', 'event.stopPropagation();');
-        }
-
-        const description = template.querySelector('.project-description');
-        if (description) {
-            description.textContent = this.escapeHtml(
-                project.shortDescription || project.description || ''
-            );
-        }
-
-        const authorName = template.querySelector('.author-name');
-        if (authorName)
-            authorName.textContent = this.escapeHtml(project.authorName || 'Автор');
-
-        const viewsCount = template.querySelector('.views-count');
-        if (viewsCount)
-            viewsCount.textContent = project.viewsCount || 0;
-
-        if (project.daysLeft && project.daysLeft > 0) {
-            const daysInfo = template.querySelector('.days-info');
-            const daysLeft = template.querySelector('.days-left');
-            if (daysInfo && daysLeft) {
-                daysLeft.textContent = `${project.daysLeft}д`;
-                daysInfo.style.display = 'inline';
-            }
-        }
-
-        const rolesContainer = template.querySelector('.roles-container');
-        if (rolesContainer && project.roles && project.roles.length > 0) {
-            project.roles.forEach(role => {
-                const roleTemplate = this.roleItemTemplate.content.cloneNode(true);
-
-                const roleName = roleTemplate.querySelector('.role-name');
-                if (roleName) {
-                    roleName.textContent = this.escapeHtml(
-                        role.specialization || role.title || 'Роль'
-                    );
-                }
-
-                const roleCount = roleTemplate.querySelector('.role-count');
-                if (roleCount) {
-                    roleCount.textContent = `${role.filled || 0}/${role.vacancies || 1}`;
-                }
-
-                rolesContainer.appendChild(roleTemplate);
-            });
-        }
-
-        const skillsContainer = template.querySelector('.skills-container');
-        if (skillsContainer && project.skills && project.skills.length > 0) {
-            project.skills.forEach(skill => {
-                const skillElement = document.createElement('span');
-                skillElement.className = `skill-badge ${skill.required ? 'required' : 'optional'}`;
-                skillElement.textContent = this.escapeHtml(skill.name || '');
-                skillsContainer.appendChild(skillElement);
-            });
-        }
-
-        return template;
-    }
-
-    showRegularProjects() {
+    showRegular() {
         this.searchResults.style.display = 'none';
-        this.searchNoResults.style.display = 'none';
         this.regularProjects.style.display = 'block';
     }
-
-    clearSearch() {
-        if (this.searchInput)
-            this.searchInput.value = '';
-
-        this.currentQuery = '';
-        clearTimeout(this.searchTimeout);
-        this.showRegularProjects();
-    }
-
-    showError() {
-        this.searchNoResults.style.display = 'block';
-        this.searchResultsContainer.innerHTML = '';
-        if (this.resultsCountSpan)
-            this.resultsCountSpan.textContent = 'ошибка поиска';
-    }
-
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
 }
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        new ProjectSearch();
-    });
-} else {
-    new ProjectSearch();
-}
+document.addEventListener('DOMContentLoaded', () => new ProjectSearch());

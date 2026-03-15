@@ -14,6 +14,7 @@
         display: flex;
         align-items: center;
     }
+    .alert { transition: opacity 0.5s ease-out; }
   </style>
 </head>
 <body>
@@ -30,17 +31,17 @@
 
           <h2 class="text-center">Добро пожаловать!</h2>
 
-          <div th:if="${param.error}" class="alert alert-danger">
+          <div th:if="${param.error}" class="alert alert-danger auto-dismiss">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             Неверный email или пароль
           </div>
 
-          <div th:if="${param.logout}" class="alert alert-success">
+          <div th:if="${param.logout}" class="alert alert-success auto-dismiss">
             <i class="bi bi-check-circle-fill me-2"></i>
             Вы успешно вышли из системы
           </div>
 
-          <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+          <div th:if="${successMessage}" class="alert alert-success auto-dismiss" th:text="${successMessage}"></div>
 
           <form th:action="@{/login}" method="post" class="mt-4">
             <div class="mb-3">
@@ -78,5 +79,18 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Скрипт автоматического скрытия алертов
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      const alerts = document.querySelectorAll('.auto-dismiss');
+      alerts.forEach(function(alert) {
+        alert.style.opacity = '0';
+        setTimeout(() => alert.style.display = 'none', 500);
+      });
+    }, 5000); // 5 секунд
+  });
+</script>
 </body>
 </html>
