@@ -7,8 +7,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet; // Используем HashSet
+import java.util.Set;     // Используем Set вместо List
 
 @Entity
 @Table(name = "projects")
@@ -50,19 +50,19 @@ public class Project {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<ProjectRole> roles = new ArrayList<>();
+    private Set<ProjectRole> roles = new HashSet<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<ProjectSkill> requiredSkills = new ArrayList<>();
+    private Set<ProjectSkill> requiredSkills = new HashSet<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Favorite> favorites = new ArrayList<>();
+    private Set<Favorite> favorites = new HashSet<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<ProjectView> views = new ArrayList<>();
+    private Set<ProjectView> views = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
