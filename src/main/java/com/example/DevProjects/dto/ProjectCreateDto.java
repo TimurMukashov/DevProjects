@@ -19,7 +19,6 @@ public record ProjectCreateDto(
         List<RoleDto> roles,
         List<SkillDto> skills
 ) {
-    // Компактный конструктор для инициализации списков
     public ProjectCreateDto {
         if (roles == null) roles = new ArrayList<>();
         if (skills == null) skills = new ArrayList<>();

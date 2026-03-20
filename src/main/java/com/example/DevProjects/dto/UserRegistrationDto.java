@@ -9,8 +9,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data // Lombok автоматически создаст геттеры, сеттеры и toString
-@NoArgsConstructor // Пустой конструктор (ОЧЕНЬ ВАЖНО для Spring)
+@Data 
+@NoArgsConstructor
 @AllArgsConstructor
 public class UserRegistrationDto {
 

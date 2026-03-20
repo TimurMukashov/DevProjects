@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head></head>
+<body>
+
+<li th:fragment="bell" class="nav-item dropdown me-2" sec:authorize="isAuthenticated()">
+  <a class="nav-link position-relative" href="#" id="bellDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="bi bi-bell fs-5"></i>
+    <span th:if="${unreadNotificationsCount > 0}"
+          class="position-absolute top-1 start-100 translate-middle badge rounded-pill bg-danger"
+          style="font-size: 0.65rem; padding: 0.25em 0.5em;"
+          th:text="${unreadNotificationsCount}">
+        </span>
+  </a>
+  <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-0" aria-labelledby="bellDropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
+    <li class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 fw-bold">Уведомления</h6>
+    </li>
+    <li th:if="${#lists.isEmpty(recentNotifications)}" class="p-4 text-center">
+      <small class="text-muted">У вас нет новых уведомлений</small>
+    </li>
+    <li th:each="note : ${recentNotifications}" class="border-bottom notification-item">
+      <a th:href="@{/dashboard/notifications/{id}/click(id=${note.id})}"
+         class="dropdown-item p-3 text-decoration-none"
+         th:classappend="${!note.isRead} ? 'bg-light' : ''"
+         style="white-space: normal;">
+        <div class="fw-bold small mb-1 text-dark" th:text="${note.title}">Заголовок</div>
+        <div class="text-muted small" th:text="${note.message}">Текст сообщения</div>
+        <div class="text-end mt-2" style="font-size: 0.7rem;">
+          <span class="text-muted" th:text="${#temporals.format(note.createdAt, 'dd.MM HH:mm')}"></span>
+        </div>
+      </a>
+    </li>
+  </ul>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const bell = document.getElementById('bellDropdown');
+        if (bell) {
+            bell.addEventListener('click', function() {
+                const badge = this.querySelector('.badge');
+
+                if (!badge || badge.style.display === 'none') return;
+
+                const token = document.querySelector('meta[name=\"_csrf\"]')?.content;
+                const header = document.querySelector('meta[name=\"_csrf_header\"]')?.content;
+
+                fetch('/dashboard/notifications/read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [header]: token
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        badge.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+  </script>
+</li>
+
+</body>
+</html>

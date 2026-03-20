@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование проекта - DevProjects</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/css/project-form.css}" rel="stylesheet">
+    <meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/">DevProjects</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <th:block th:replace="~{fragments/notification-bell :: bell}"></th:block>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">
+                        <i class="bi bi-person-circle me-1"></i>Личный кабинет
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">
+                        <i class="bi bi-box-arrow-right me-1"></i>Выйти
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="auth-card card shadow-sm border-0">
+                <div class="card-body p-4 p-lg-5">
+                    <div class="mb-4">
+                        <a th:href="@{/projects/{id}(id=${projectEditDto.id()})}" class="text-muted text-decoration-none small fw-bold">
+                            <i class="bi bi-chevron-left"></i> НАЗАД К ПРОЕКТУ
+                        </a>
+                    </div>
+
+                    <h2 class="fw-bold mb-1 text-dark">Настройки проекта</h2>
+                    <p class="text-muted mb-5">Обновите состав команды и стек технологий</p>
+
+                    <form th:action="@{/projects/{id}/edit(id=${projectEditDto.id()})}" th:object="${projectEditDto}" method="post" id="projectForm">
+
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="form-section mb-5">
+                            <h5 class="form-section-title"><i class="bi bi-info-circle me-2"></i>Основная информация</h5>
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Название проекта *</label>
+                                <input type="text" class="form-control form-control-lg" th:field="*{title}" placeholder="Напр: Платформа для поиска менторов">
+                                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold text-uppercase text-muted">Описание *</label>
+                                <textarea class="form-control" th:field="*{description}" rows="5" placeholder="Подробно опишите идею проекта и цели..."></textarea>
+                                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <label class="form-label small fw-bold text-uppercase text-muted">Дедлайн (необязательно)</label>
+                                    <input type="date" class="form-control" th:field="*{deadline}">
+                                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('deadline')}" th:errors="*{deadline}"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section mb-5">
+                            <h5 class="form-section-title"><i class="bi bi-people me-2"></i>Команда (Роли)</h5>
+                            <div id="roles-container"></div>
+                            <button type="button" class="btn btn-pill btn-outline-violet btn-sm mt-2" id="addRole">
+                                <i class="bi bi-plus-circle me-1"></i> Добавить роль
+                            </button>
+                        </div>
+
+                        <div class="form-section mb-5">
+                            <h5 class="form-section-title"><i class="bi bi-code-square me-2"></i>Стек технологий</h5>
+                            <div id="skills-container" class="bg-light bg-opacity-50 rounded-3 p-3 mb-3"></div>
+                            <button type="button" class="btn btn-pill btn-outline-violet btn-sm" id="addSkill">
+                                <i class="bi bi-plus-circle me-1"></i> Добавить навык
+                            </button>
+                        </div>
+
+                        <hr class="my-5 opacity-10">
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-pill btn-violet py-3 shadow-sm">
+                                Сохранить изменения
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="roleTemplate">
+    <div class="item-row role-item rounded-3 p-4 mb-4 shadow-sm border">
+        <input type="hidden" class="role-id">
+        <div class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label small fw-bold">Специализация *</label>
+                <select class="form-select role-specialization" required></select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small fw-bold">Заголовок</label>
+                <input type="text" class="form-control role-title" placeholder="Senior Java Developer">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Мест</label>
+                <input type="number" class="form-control role-vacancies" value="1" min="1">
+            </div>
+            <div class="col-12 mt-2">
+                <label class="form-label small fw-bold">Задачи</label>
+                <textarea class="form-control role-description" rows="2" placeholder="Опишите задачи данной роли..."></textarea>
+            </div>
+            <div class="col-12 text-end mt-2">
+                <button type="button" class="remove-btn remove-item">
+                    <i class="bi bi-trash3 me-1"></i> Удалить роль
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="skillTemplate">
+    <div class="item-row skill-item rounded-3 p-3 mb-2 border-0">
+        <input type="hidden" class="skill-id">
+        <div class="row align-items-center g-3">
+            <div class="col-md-6">
+                <select class="form-select skill-select" required></select>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check form-switch">
+                    <input type="checkbox" class="form-check-input skill-required" checked>
+                    <label class="form-check-label small fw-bold">Обязательный</label>
+                </div>
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="button" class="btn-close remove-item" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    window.initialProjectData = /*[[${projectEditDto}]]*/ {};
+    /*]]>*/
+</script>
+
+<script th:src="@{/js/project-edit.js}"></script>
+</body>
+</html>

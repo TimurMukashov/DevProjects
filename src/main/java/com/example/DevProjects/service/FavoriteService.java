@@ -25,11 +25,10 @@ public class FavoriteService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Проект не найден"));
 
-        // Используем новый метод по ID, чтобы избежать бага Hibernate
         if (favoriteRepository.existsByUserIdAndProjectId(user.getId(), projectId)) {
             favoriteRepository.deleteByUserAndProject(user, project);
             log.info("Проект {} удален из избранного пользователя {}", projectId, user.getEmail());
-            return false; // Удалено
+            return false;
         } else {
             Favorite favorite = Favorite.builder()
                     .user(user)
@@ -37,7 +36,7 @@ public class FavoriteService {
                     .build();
             favoriteRepository.save(favorite);
             log.info("Проект {} добавлен в избранное пользователя {}", projectId, user.getEmail());
-            return true; // Добавлено
+            return true;
         }
     }
 

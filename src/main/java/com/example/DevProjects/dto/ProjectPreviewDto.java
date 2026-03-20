@@ -17,10 +17,11 @@ public record ProjectPreviewDto(
         String statusText,
         String statusColor,
         Integer viewsCount,
-        Integer applicationsCount, // Добавлено
+        Integer applicationsCount,
         String authorName,
-        LocalDateTime createdAt,   // Добавлено
-        LocalDate deadline,        // Добавлено
+        String authorEmail, // Добавлено поле для проверки прав автора
+        LocalDateTime createdAt,
+        LocalDate deadline,
         List<RoleDto> roles,
         List<SkillDto> skills,
         long daysLeft,
@@ -29,11 +30,12 @@ public record ProjectPreviewDto(
 ) {
     @Builder
     public record RoleDto(
+            Integer id, // Добавлено поле ID для передачи в модальное окно на фронтенде
             String specialization,
             int vacancies,
             int filled,
             String title,
-            boolean isOpen // Добавлено для шаблона
+            boolean isOpen
     ) {}
 
     public record SkillDto(
@@ -44,11 +46,12 @@ public record ProjectPreviewDto(
     public static ProjectPreviewDto fromProject(Project project) {
         List<RoleDto> roleDtos = project.getRoles().stream()
                 .map(r -> RoleDto.builder()
+                        .id(r.getId()) // Маппинг ID роли
                         .specialization(r.getSpecialization().getName())
                         .vacancies(r.getVacanciesCount())
                         .filled(r.getFilledCount())
                         .title(r.getTitle())
-                        .isOpen(r.getFilledCount() < r.getVacanciesCount()) // Логика открытости роли
+                        .isOpen(r.getFilledCount() < r.getVacanciesCount())
                         .build())
                 .toList();
 
@@ -64,10 +67,11 @@ public record ProjectPreviewDto(
                 .statusText(mapStatus(project.getStatus()))
                 .statusColor(mapColor(project.getStatus()))
                 .viewsCount(project.getViewsCount())
-                .applicationsCount(project.getApplicationsCount()) // Маппинг заявок
+                .applicationsCount(project.getApplicationsCount())
                 .authorName(project.getAuthorFullName())
-                .createdAt(project.getCreatedAt()) // Маппинг даты создания
-                .deadline(project.getDeadline())   // Маппинг дедлайна
+                .authorEmail(project.getAuthor().getEmail()) // Маппинг Email автора
+                .createdAt(project.getCreatedAt())
+                .deadline(project.getDeadline())
                 .roles(roleDtos)
                 .skills(skillDtos)
                 .daysLeft(project.getDeadline() != null ? ChronoUnit.DAYS.between(LocalDate.now(), project.getDeadline()) : 0)

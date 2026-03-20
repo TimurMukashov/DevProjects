@@ -44,12 +44,12 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    // ВОЗВРАЩЕНО ОРИГИНАЛЬНОЕ ИМЯ
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<Project> projects = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    // ИСПРАВЛЕНО: mappedBy = "user" заменено на mappedBy = "specialist"
+    @OneToMany(mappedBy = "specialist", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<Application> applications = new HashSet<>();
 

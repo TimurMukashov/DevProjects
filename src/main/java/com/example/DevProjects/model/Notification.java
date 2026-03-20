@@ -19,13 +19,14 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    // Переименовано из user в recipient, чтобы работал метод .recipient() в билдере сервиса
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private User recipient;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private NotificationType type;
+    // Изменено на String, так как сервис передает строки (напр. "application_received")
+    @Column(nullable = false, length = 255)
+    private String type;
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -33,21 +34,20 @@ public class Notification {
     @Column(columnDefinition = "TEXT")
     private String message;
 
+    // Изменено на примитив boolean, чтобы Lombok сгенерировал именно isRead() и setRead()
     @Builder.Default
-    @Column(name = "is_read")
-    private Boolean isRead = false;
+    @Column(name = "is_read", nullable = false)
+    private boolean isRead = false;
 
-    @Column(name = "related_entity_type", length = 50)
-    private String relatedEntityType;
+    // Переименовано в targetType, как ожидает сервис
+    @Column(name = "target_type", length = 50)
+    private String targetType;
 
-    @Column(name = "related_entity_id")
-    private Integer relatedEntityId;
+    // Переименовано в targetId, как ожидает сервис
+    @Column(name = "target_id")
+    private Integer targetId;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-
-    public enum NotificationType {
-        application_received, application_status_changed, project_updated, system
-    }
 }

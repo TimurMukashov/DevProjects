@@ -27,10 +27,10 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "LEFT JOIN FETCH u.favorites fav " +
             "LEFT JOIN FETCH fav.project p " +
             "LEFT JOIN FETCH p.author " +
-            "LEFT JOIN FETCH p.roles pr " +       // Подгружаем роли проекта
+            "LEFT JOIN FETCH p.roles pr " +
             "LEFT JOIN FETCH pr.specialization " +
-            "LEFT JOIN FETCH p.requiredSkills rs "+ // ИСПРАВЛЕНО: Подгружаем навыки проекта
-            "LEFT JOIN FETCH rs.skill " +          // ИСПРАВЛЕНО: Подгружаем названия навыков
+            "LEFT JOIN FETCH p.requiredSkills rs "+
+            "LEFT JOIN FETCH rs.skill " +
             "WHERE u.email = :email")
     Optional<User> findByEmailWithAllData(@Param("email") String email);
 }

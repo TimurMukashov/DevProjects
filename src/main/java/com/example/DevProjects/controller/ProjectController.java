@@ -4,6 +4,7 @@ import com.example.devprojects.dto.ProjectCreateDto;
 import com.example.devprojects.dto.ProjectEditDto;
 import com.example.devprojects.dto.ProjectPreviewDto;
 import com.example.devprojects.security.CustomUserDetails;
+import com.example.devprojects.service.ApplicationService;
 import com.example.devprojects.service.FavoriteService;
 import com.example.devprojects.service.ProjectService;
 import jakarta.validation.Valid;
@@ -24,10 +25,10 @@ public class ProjectController {
 
     private final ProjectService projectService;
     private final FavoriteService favoriteService;
+    private final ApplicationService applicationService; // Добавлено
 
     @GetMapping("/new")
     public String createProjectForm(Model model) {
-        // ИСПРАВЛЕНО: Передаем null во все поля рекорда
         model.addAttribute("projectCreateDto", new ProjectCreateDto(null, null, null, null, null));
         return "projects/create";
     }
@@ -37,11 +38,10 @@ public class ProjectController {
                                 BindingResult bindingResult,
                                 @AuthenticationPrincipal CustomUserDetails currentUser,
                                 RedirectAttributes redirectAttributes,
-                                Model model) { // ИСПРАВЛЕНО: Добавлен Model model
+                                Model model) {
 
-        if (bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors())
             return "projects/create";
-        }
 
         try {
             Integer projectId = projectService.createProject(dto, currentUser.getUsername());
@@ -105,5 +105,29 @@ public class ProjectController {
         model.addAttribute("isFavorite", isFavorite);
 
         return "projects/view";
+    }
+
+    // НОВЫЙ МЕТОД ДЛЯ ПОДАЧИ ЗАЯВКИ
+    @PostMapping("/{id}/apply")
+    public String applyForProject(@PathVariable Integer id,
+                                  @RequestParam Integer roleId,
+                                  @RequestParam(required = false) String coverLetter,
+                                  @AuthenticationPrincipal CustomUserDetails currentUser,
+                                  RedirectAttributes redirectAttributes) {
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            applicationService.applyForRole(currentUser.getUser().getId(), roleId, coverLetter);
+            redirectAttributes.addFlashAttribute("successMessage", "Ваша заявка успешно отправлена автору проекта!");
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (Exception e) {
+            log.error("Ошибка при подаче заявки", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Произошла непредвиденная ошибка при отправке заявки.");
+        }
+
+        return "redirect:/projects/" + id;
     }
 }

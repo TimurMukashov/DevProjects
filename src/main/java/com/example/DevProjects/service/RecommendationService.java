@@ -32,7 +32,6 @@ public class RecommendationService {
         logUserSkills(user);
         logUserSpecializations(user);
 
-        // Используем новый эффективный метод репозитория
         List<Project> allProjects = projectRepository.findAllOpenWithDetails();
         log.info("Всего открытых проектов для анализа: {}", allProjects.size());
 
@@ -73,7 +72,6 @@ public class RecommendationService {
             }
         }
 
-        // Сортировка по убыванию веса (Record accessor syntax)
         recommendations.sort((a, b) -> Double.compare(b.score(), a.score()));
 
         return recommendations;
@@ -99,9 +97,8 @@ public class RecommendationService {
                     currentUserLikes, currentUserSpecs
             );
 
-            if (similarity > 0.1) {
+            if (similarity > 0.1)
                 similarUsers.put(otherUser, similarity);
-            }
         }
         return sortSimilarUsers(similarUsers);
     }

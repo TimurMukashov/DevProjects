@@ -3,6 +3,8 @@ package com.example.devprojects.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -18,27 +20,41 @@ public class Application {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    // Привязываем именно к специалисту, как в SQL (specialist_id)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id", nullable = false)
-    private Project project;
+    @JoinColumn(name = "specialist_id", nullable = false)
+    private User specialist;
 
+    // Привязываем к роли в проекте, а не к самому проекту (project_role_id)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user; // Имя поля должно быть 'user', чтобы в User.java работало mappedBy = "user"
+    @JoinColumn(name = "project_role_id", nullable = false)
+    private ProjectRole projectRole;
 
-    @Column(columnDefinition = "TEXT")
-    private String message;
+    // В базе поле называется cover_letter
+    @Column(name = "cover_letter", columnDefinition = "TEXT")
+    private String coverLetter;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private ApplicationStatus status = ApplicationStatus.pending;
+    private Status status = Status.pending;
+
+    @Column(name = "viewed_at")
+    private LocalDateTime viewedAt;
+
+    @Column(name = "responded_at")
+    private LocalDateTime respondedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    public enum ApplicationStatus {
-        pending, accepted, rejected, withdrawn
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // Добавлен статус viewed
+    public enum Status {
+        pending, viewed, accepted, rejected, withdrawn
     }
 }

@@ -69,7 +69,6 @@ public class UserService {
                 .favorites(new HashSet<>())
                 .build();
 
-        // Обработка специализаций с проверкой на дубликаты
         if (registrationDto.getSpecializations() != null) {
             Set<Integer> seenSpecs = new HashSet<>();
             for (var specDto : registrationDto.getSpecializations()) {
@@ -90,7 +89,6 @@ public class UserService {
             }
         }
 
-        // Обработка навыков с проверкой на дубликаты
         if (registrationDto.getSkills() != null) {
             Set<Integer> seenSkills = new HashSet<>();
             for (var skillDto : registrationDto.getSkills()) {

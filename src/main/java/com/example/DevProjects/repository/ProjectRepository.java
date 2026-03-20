@@ -12,7 +12,6 @@ import java.util.Optional;
 
 public interface ProjectRepository extends JpaRepository<Project, Integer> {
 
-    // Добавлено: Поиск проектов конкретного автора
     @Query("SELECT DISTINCT p FROM Project p " +
             "LEFT JOIN FETCH p.author " +
             "LEFT JOIN FETCH p.roles r " +

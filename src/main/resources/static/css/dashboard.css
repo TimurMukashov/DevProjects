@@ -42,16 +42,18 @@
     display: inline-block;
 }
 
+/* Точка онлайн-статуса */
 .profile-avatar::after {
     content: '';
     position: absolute;
-    bottom: 5px;
-    right: 5px;
-    width: 20px;
-    height: 20px;
+    bottom: 12px;
+    right: 12px;
+    width: 18px;
+    height: 18px;
     background-color: var(--secondary-color);
     border: 3px solid white;
     border-radius: 50%;
+    z-index: 2;
 }
 
 .profile-avatar img {
@@ -434,6 +436,14 @@ footer .text-muted {
     font-size: 1rem;
 }
 
+/* Выравнивание левой колонки профиля */
+.profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
 @media (max-width: 992px) {
     .stats-grid {
         gap: 1rem;
@@ -581,7 +591,7 @@ footer .text-muted {
 }
 
 .dashboard-actions .btn {
-    border-radius: 2rem; /* Одинаковая сильная округлость для всех кнопок */
+    border-radius: 2rem;
     padding: 0.6rem 2rem;
     font-weight: 600;
     transition: all 0.2s ease;
@@ -592,7 +602,6 @@ footer .text-muted {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Специфично для кнопки поиска */
 .btn-outline-primary {
     border-color: #6366f1;
     color: #6366f1;

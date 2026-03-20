@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/profile-data")
-@RequiredArgsConstructor // Автоматически создаст конструктор для финальных полей
+@RequiredArgsConstructor
 public class ProfileDataController {
 
     private final SpecializationRepository specializationRepository;

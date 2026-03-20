@@ -33,7 +33,7 @@ public class SecurityConfig {
 
     @Bean
     public HttpFirewall allowUrlSemicolonHttpFirewall() {
-        StrictHttpFirewall firewall = new StrictHttpFirewall(); // Исправлено: добавлено слово Firewall
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
         firewall.setAllowSemicolon(true);
         firewall.setAllowUrlEncodedPercent(true);
         firewall.setAllowBackSlash(true);

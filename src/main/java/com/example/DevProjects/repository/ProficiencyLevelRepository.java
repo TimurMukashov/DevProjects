@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ProficiencyLevelRepository extends JpaRepository<ProficiencyLevel, Integer> {
-    // Сортировка уровней владения согласно заданному порядку (sort_order)
     List<ProficiencyLevel> findAllByOrderBySortOrderAsc();
 }

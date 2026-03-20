@@ -11,8 +11,8 @@ public record ProjectEditDto(
         @NotBlank String title,
         @NotBlank String description,
         @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate deadline,
-        List<RoleDto> roles,  // Должно совпадать с префиксом в JS: roles[i]
-        List<SkillDto> skills, // Должно совпадать с префиксом в JS: skills[i]
+        List<RoleDto> roles,
+        List<SkillDto> skills,
         String authorEmail
 ) {
     public ProjectEditDto {
@@ -22,7 +22,7 @@ public record ProjectEditDto(
 
     public record RoleDto(
             Integer id,
-            @NotNull Integer specializationId, // Поле: roles[i].specializationId
+            @NotNull Integer specializationId,
             String title,
             String description,
             @Min(1) Integer vacanciesCount
@@ -30,7 +30,7 @@ public record ProjectEditDto(
 
     public record SkillDto(
             Integer id,
-            @NotNull Integer skillId, // Поле: skills[i].skillId
-            boolean required          // Поле: skills[i].required
+            @NotNull Integer skillId,
+            boolean required
     ) {}
 }

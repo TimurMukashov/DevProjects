@@ -13,7 +13,6 @@ import java.util.List;
 @Repository
 public interface FavoriteRepository extends JpaRepository<Favorite, Favorite.FavoriteId> {
 
-    // Используем ручной запрос, чтобы избежать NullPointerException в Hibernate 6
     @Query("SELECT COUNT(f) > 0 FROM Favorite f WHERE f.user.id = :userId AND f.project.id = :projectId")
     boolean existsByUserIdAndProjectId(@Param("userId") Integer userId, @Param("projectId") Integer projectId);
 

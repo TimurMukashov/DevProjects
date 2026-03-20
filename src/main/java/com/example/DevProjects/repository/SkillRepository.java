@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface SkillRepository extends JpaRepository<Skill, Integer> {
-    // Группировка по категории и сортировка по имени внутри категории
     List<Skill> findAllByOrderByCategoryAscNameAsc();
 }

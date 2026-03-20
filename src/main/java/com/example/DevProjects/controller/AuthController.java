@@ -20,7 +20,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AuthController {
 
     private final UserService userService;
-    // FileService полностью убран отсюда
 
     @GetMapping("/login")
     public String loginForm(@RequestParam(value = "error", required = false) String error,
@@ -62,9 +61,7 @@ public class AuthController {
         }
 
         try {
-            // Файл больше не принимаем. Передаем null, а UserService сам поставит дефолтную картинку
             userService.registerNewUser(registrationDto, null);
-
             redirectAttributes.addFlashAttribute("successMessage", "Регистрация успешна! Теперь вы можете войти.");
             return "redirect:/login";
         } catch (Exception e) {
