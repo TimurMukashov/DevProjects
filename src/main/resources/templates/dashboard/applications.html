@@ -75,7 +75,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <span class="badge bg-light text-dark border">Роль: <span th:text="${app.projectRole.title}"></span></span>
+                        <span class="badge bg-light text-dark border">Роль: <span th:text="${app.projectRole.getSpecializationName()}"></span></span>
                         <span class="badge" th:classappend="${app.status.name() == 'pending' ? 'bg-warning text-dark' : (app.status.name() == 'accepted' ? 'bg-success' : 'bg-danger')}"
                               th:text="${app.status.name() == 'pending' ? 'Ожидает' : (app.status.name() == 'accepted' ? 'Принят' : 'Отклонен')}"></span>
                     </div>

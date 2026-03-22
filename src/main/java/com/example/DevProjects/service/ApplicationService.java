@@ -22,8 +22,11 @@ public class ApplicationService {
     // 1. Подача заявки пользователем
     @Transactional
     public Application applyForRole(Integer specialistId, Integer projectRoleId, String coverLetter) {
-        if (applicationRepository.existsBySpecialistIdAndProjectRoleId(specialistId, projectRoleId)) {
-            throw new IllegalStateException("Вы уже подали заявку на эту роль");
+        // ИСПРАВЛЕНО: Теперь разрешаем повторную подачу, если предыдущая заявка была отклонена (rejected)
+        // Запрещаем только если есть активная заявка (на рассмотрении или уже принятая)
+        if (applicationRepository.existsBySpecialistIdAndProjectRoleIdAndStatusNot(
+                specialistId, projectRoleId, Application.Status.rejected)) {
+            throw new IllegalStateException("У вас уже есть активная заявка на эту роль (на рассмотрении или принята)");
         }
 
         User specialist = userRepository.findById(specialistId)
@@ -82,7 +85,7 @@ public class ApplicationService {
     // ДОБАВЛЕНО: Получение заявки по ID
     @Transactional(readOnly = true)
     public Application getById(Integer id) {
-        return applicationRepository.findById(id)
+        return applicationRepository.findByIdWithProjectData(id)
                 .orElseThrow(() -> new IllegalArgumentException("Заявка не найдена"));
     }
 

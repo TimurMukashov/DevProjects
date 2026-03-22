@@ -112,7 +112,7 @@
                                             <h5 class="fw-bold text-dark mb-1" th:text="${app.projectRole.project.title}">Название проекта</h5>
                                         </a>
                                         <div class="mb-2">
-                                            <span class="badge bg-light text-primary border" th:text="${app.projectRole.title}">Роль</span>
+                                            <span class="badge bg-light text-primary border" th:text="${app.projectRole.getSpecializationName()}">Роль</span>
                                             <small class="text-muted ms-2">
                                                 Автор: <span th:text="${app.projectRole.project.author.firstName + ' ' + app.projectRole.project.author.lastName}">Автор</span>
                                             </small>

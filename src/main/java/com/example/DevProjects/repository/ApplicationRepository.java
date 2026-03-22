@@ -7,31 +7,40 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, Integer> {
 
-    // Проверка: подавал ли уже этот пользователь заявку на эту конкретную роль?
     boolean existsBySpecialistIdAndProjectRoleId(Integer specialistId, Integer projectRoleId);
 
-    // ИСПРАВЛЕНО: Добавлен JOIN FETCH для загрузки роли, проекта и автора проекта одним запросом
+    // НОВЫЙ МЕТОД: Проверяет наличие заявки, статус которой НЕ является отклоненным
+    boolean existsBySpecialistIdAndProjectRoleIdAndStatusNot(Integer specialistId, Integer projectRoleId, Application.Status status);
+
     @Query("SELECT a FROM Application a " +
             "JOIN FETCH a.projectRole pr " +
+            "JOIN FETCH pr.specialization " +
             "JOIN FETCH pr.project p " +
             "JOIN FETCH p.author " +
             "WHERE a.specialist.id = :specialistId " +
             "ORDER BY a.createdAt DESC")
     List<Application> findAllBySpecialistIdWithProjectData(@Param("specialistId") Integer specialistId);
 
-    // Получить все заявки на конкретный проект
     @Query("SELECT a FROM Application a " +
             "JOIN FETCH a.specialist " +
             "JOIN FETCH a.projectRole pr " +
+            "JOIN FETCH pr.specialization " +
             "WHERE pr.project.id = :projectId " +
             "ORDER BY a.createdAt DESC")
     List<Application> findAllByProjectId(@Param("projectId") Integer projectId);
 
-    // Подсчет количества заявок на проект
+    @Query("SELECT a FROM Application a " +
+            "JOIN FETCH a.projectRole pr " +
+            "JOIN FETCH pr.specialization " +
+            "JOIN FETCH pr.project p " +
+            "WHERE a.id = :id")
+    Optional<Application> findByIdWithProjectData(@Param("id") Integer id);
+
     @Query("SELECT COUNT(a) FROM Application a WHERE a.projectRole.project.id = :projectId")
     long countByProjectId(@Param("projectId") Integer projectId);
 }
