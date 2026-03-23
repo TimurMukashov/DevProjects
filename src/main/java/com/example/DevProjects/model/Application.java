@@ -6,6 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "applications")
@@ -20,17 +22,14 @@ public class Application {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // Привязываем именно к специалисту, как в SQL (specialist_id)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "specialist_id", nullable = false)
     private User specialist;
 
-    // Привязываем к роли в проекте, а не к самому проекту (project_role_id)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_role_id", nullable = false)
     private ProjectRole projectRole;
 
-    // В базе поле называется cover_letter
     @Column(name = "cover_letter", columnDefinition = "TEXT")
     private String coverLetter;
 
@@ -53,7 +52,10 @@ public class Application {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Добавлен статус viewed
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ApplicationAttachment> attachments = new ArrayList<>();
+
     public enum Status {
         pending, viewed, accepted, rejected, withdrawn
     }

@@ -15,7 +15,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile; // Добавлено
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.io.IOException; // Добавлено
+import java.util.List; // Добавлено
 
 @Controller
 @RequestMapping("/projects")
@@ -25,7 +29,7 @@ public class ProjectController {
 
     private final ProjectService projectService;
     private final FavoriteService favoriteService;
-    private final ApplicationService applicationService; // Добавлено
+    private final ApplicationService applicationService;
 
     @GetMapping("/new")
     public String createProjectForm(Model model) {
@@ -107,11 +111,11 @@ public class ProjectController {
         return "projects/view";
     }
 
-    // НОВЫЙ МЕТОД ДЛЯ ПОДАЧИ ЗАЯВКИ
     @PostMapping("/{id}/apply")
     public String applyForProject(@PathVariable Integer id,
                                   @RequestParam Integer roleId,
                                   @RequestParam(required = false) String coverLetter,
+                                  @RequestParam(value = "files", required = false) List<MultipartFile> files, // Добавлено
                                   @AuthenticationPrincipal CustomUserDetails currentUser,
                                   RedirectAttributes redirectAttributes) {
         if (currentUser == null) {
@@ -119,10 +123,13 @@ public class ProjectController {
         }
 
         try {
-            applicationService.applyForRole(currentUser.getUser().getId(), roleId, coverLetter);
+            applicationService.applyForRole(currentUser.getUser().getId(), roleId, coverLetter, files);
             redirectAttributes.addFlashAttribute("successMessage", "Ваша заявка успешно отправлена автору проекта!");
         } catch (IllegalStateException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (IOException e) {
+            log.error("Ошибка ввода-вывода при загрузке файлов", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при сохранении прикрепленных файлов.");
         } catch (Exception e) {
             log.error("Ошибка при подаче заявки", e);
             redirectAttributes.addFlashAttribute("errorMessage", "Произошла непредвиденная ошибка при отправке заявки.");

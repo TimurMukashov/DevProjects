@@ -23,7 +23,7 @@ public record ProjectEditDto(
     public record RoleDto(
             Integer id,
             @NotNull Integer specializationId,
-            String title,
+            @NotNull Integer proficiencyLevelId,
             String description,
             @Min(1) Integer vacanciesCount
     ) {}

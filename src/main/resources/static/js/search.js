@@ -56,14 +56,12 @@ class ProjectSearch {
         const card = clone.querySelector('.project-card');
         const projectUrl = `/projects/${p.id}`;
 
-        // Устанавливаем клик на всю карточку
         card.onclick = () => window.location.href = projectUrl;
 
         const badge = clone.querySelector('.status-badge');
         badge.textContent = p.statusText;
         badge.className = `status-badge badge bg-${p.statusColor}`;
 
-        // ИСПРАВЛЕНО: Устанавливаем текст и корректную ссылку для заголовка
         const titleLink = clone.querySelector('.project-title a');
         titleLink.textContent = p.title;
         titleLink.href = projectUrl;

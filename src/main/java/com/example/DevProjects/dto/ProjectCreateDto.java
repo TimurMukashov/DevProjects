@@ -25,10 +25,16 @@ public record ProjectCreateDto(
     }
 
     public record RoleDto(
-            @NotNull Integer specializationId,
-            String title,
+            @NotNull(message = "Специализация обязательна")
+            Integer specializationId,
+
+            @NotNull(message = "Уровень владения обязателен")
+            Integer proficiencyLevelId,
+
             String description,
-            @Min(1) Integer vacanciesCount
+
+            @Min(value = 1, message = "Количество мест должно быть не менее 1")
+            Integer vacanciesCount
     ) {}
 
     public record SkillDto(

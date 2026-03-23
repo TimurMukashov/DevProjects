@@ -5,7 +5,6 @@ let proficiencyLevels = [];
 document.addEventListener('DOMContentLoaded', function() {
     loadReferenceData();
 
-    // Логика превью аватара
     const avatarInput = document.getElementById('avatarInput');
     const avatarPreview = document.getElementById('avatarPreview');
     if (avatarInput && avatarPreview) {
@@ -46,6 +45,7 @@ function addSpecialization() {
 
     const newItem = document.querySelector('.specialization-item:last-child');
     fillSpecializationSelect(newItem.querySelector('.specialization-select'));
+    fillLevelSelect(newItem.querySelector('.specialization-level'));
 
     newItem.querySelector('.remove-item').addEventListener('click', function() {
         newItem.remove();
@@ -59,7 +59,6 @@ function addSkill() {
 
     const newItem = document.querySelector('.skill-item:last-child');
     fillSkillSelect(newItem.querySelector('.skill-select'));
-    fillLevelSelect(newItem.querySelector('.skill-level'));
 
     newItem.querySelector('.remove-item').addEventListener('click', function() {
         newItem.remove();
@@ -125,6 +124,8 @@ function prepareFormSubmit(e) {
     // Сбор и проверка специализаций
     document.querySelectorAll('.specialization-item').forEach((item, index) => {
         const select = item.querySelector('.specialization-select');
+        // ДОБАВЛЕНО: получение выбранного уровня
+        const levelSelect = item.querySelector('.specialization-level');
         const experience = item.querySelector('.specialization-experience');
         const isPrimary = item.querySelector('.specialization-primary');
 
@@ -137,6 +138,8 @@ function prepareFormSubmit(e) {
                 seenSpecs.add(specId);
                 select.classList.remove('is-invalid');
                 addHiddenField(`specializations[${index}].specializationId`, select.value);
+                // ДОБАВЛЕНО: отправка уровня
+                addHiddenField(`specializations[${index}].proficiencyLevelId`, levelSelect.value);
                 addHiddenField(`specializations[${index}].yearsOfExperience`, experience.value || '0');
                 addHiddenField(`specializations[${index}].primary`, isPrimary.checked);
             }
@@ -146,7 +149,7 @@ function prepareFormSubmit(e) {
     // Сбор и проверка навыков
     document.querySelectorAll('.skill-item').forEach((item, index) => {
         const skillSelect = item.querySelector('.skill-select');
-        const levelSelect = item.querySelector('.skill-level');
+        // УДАЛЕНО: получение уровня
         const experience = item.querySelector('.skill-experience');
 
         if (skillSelect.value && skillSelect.value !== '') {
@@ -158,7 +161,7 @@ function prepareFormSubmit(e) {
                 seenSkills.add(skillId);
                 skillSelect.classList.remove('is-invalid');
                 addHiddenField(`skills[${index}].skillId`, skillSelect.value);
-                addHiddenField(`skills[${index}].proficiencyLevelId`, levelSelect.value);
+                // УДАЛЕНО: отправка уровня
                 addHiddenField(`skills[${index}].yearsOfExperience`, experience.value || '0');
             }
         }

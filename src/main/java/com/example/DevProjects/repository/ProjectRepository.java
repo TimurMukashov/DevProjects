@@ -16,6 +16,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             "LEFT JOIN FETCH p.author " +
             "LEFT JOIN FETCH p.roles r " +
             "LEFT JOIN FETCH r.specialization " +
+            "LEFT JOIN FETCH r.proficiencyLevel " + // Добавлено
             "LEFT JOIN FETCH p.requiredSkills rs " +
             "LEFT JOIN FETCH rs.skill " +
             "WHERE p.author.email = :email " +
@@ -26,6 +27,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             "LEFT JOIN FETCH p.author " +
             "LEFT JOIN FETCH p.roles r " +
             "LEFT JOIN FETCH r.specialization " +
+            "LEFT JOIN FETCH r.proficiencyLevel " + // Добавлено
             "LEFT JOIN FETCH p.requiredSkills rs " +
             "LEFT JOIN FETCH rs.skill " +
             "WHERE p.status = com.example.devprojects.model.Project$ProjectStatus.open")
@@ -35,6 +37,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             "LEFT JOIN FETCH p.author " +
             "LEFT JOIN FETCH p.roles r " +
             "LEFT JOIN FETCH r.specialization " +
+            "LEFT JOIN FETCH r.proficiencyLevel " + // Добавлено
             "LEFT JOIN FETCH p.requiredSkills rs " +
             "LEFT JOIN FETCH rs.skill sk " +
             "WHERE p.status = :status")
@@ -44,6 +47,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             "LEFT JOIN FETCH p.author " +
             "LEFT JOIN FETCH p.roles r " +
             "LEFT JOIN FETCH r.specialization " +
+            "LEFT JOIN FETCH r.proficiencyLevel " + // Добавлено
             "LEFT JOIN FETCH p.requiredSkills rs " +
             "LEFT JOIN FETCH rs.skill " +
             "WHERE p.id = :id")
@@ -53,6 +57,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             "LEFT JOIN FETCH p.author " +
             "LEFT JOIN FETCH p.roles r " +
             "LEFT JOIN FETCH r.specialization s " +
+            "LEFT JOIN FETCH r.proficiencyLevel " +
             "LEFT JOIN FETCH p.requiredSkills rs " +
             "LEFT JOIN FETCH rs.skill sk " +
             "WHERE p.id IN ( " +
@@ -73,6 +78,7 @@ public interface ProjectRepository extends JpaRepository<Project, Integer> {
             "LEFT JOIN FETCH p.author " +
             "LEFT JOIN FETCH p.roles r " +
             "LEFT JOIN FETCH r.specialization " +
+            "LEFT JOIN FETCH r.proficiencyLevel " +
             "LEFT JOIN FETCH p.requiredSkills rs " +
             "LEFT JOIN FETCH rs.skill " +
             "WHERE p.id IN ( " +

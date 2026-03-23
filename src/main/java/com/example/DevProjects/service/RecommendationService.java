@@ -2,13 +2,17 @@ package com.example.devprojects.service;
 
 import com.example.devprojects.dto.RecommendationDto;
 import com.example.devprojects.model.*;
+import com.example.devprojects.repository.ApplicationRepository;
 import com.example.devprojects.repository.ProjectRepository;
+import com.example.devprojects.repository.ProjectViewRepository;
 import com.example.devprojects.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -19,49 +23,56 @@ public class RecommendationService {
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final ApplicationRepository applicationRepository;
+    private final ProjectViewRepository projectViewRepository;
 
-    private static final double SKILL_WEIGHT = 0.35;        // вес совпадения навыков
-    private static final double SPECIALIZATION_WEIGHT = 0.25; // вес совпадения специализаций
-    private static final double COLLABORATIVE_WEIGHT = 0.40;  // вес коллаборативной фильтрации
+    private static final double SKILL_WEIGHT = 0.35;
+    private static final double SPECIALIZATION_WEIGHT = 0.30;
+    private static final double COLLABORATIVE_WEIGHT = 0.35;
     private static final double MIN_SCORE = 0.1;
+
+    // Веса для коллабративной фильтрации
+    private static final double WEIGHT_APPLY = 1.0;
+    private static final double WEIGHT_FAVORITE = 0.5;
+    private static final double WEIGHT_VIEW = 0.1;
 
     @Transactional(readOnly = true)
     public List<RecommendationDto> getRecommendationsForUser(User user) {
         log.info("Генерация рекомендаций для пользователя: {} (ID: {})", user.getEmail(), user.getId());
 
-        logUserSkills(user);
-        logUserSpecializations(user);
-
         List<Project> allProjects = projectRepository.findAllOpenWithDetails();
-        log.info("Всего открытых проектов для анализа: {}", allProjects.size());
 
-        Map<User, Double> similarUsers = findSimilarUsers(user);
-        log.info("Найдено похожих пользователей: {}", similarUsers.size());
+        // получаем карту взаимодействий текущего пользователя
+        Map<Integer, Double> currentUserInteractions = getUserInteractions(user);
 
-        Map<Long, Double> collaborativeScores = calculateCollaborativeScores(user, similarUsers);
+        Map<User, Double> similarUsers = findSimilarUsers(user, currentUserInteractions);
+        Map<Long, Double> collaborativeScores = calculateCollaborativeScores(currentUserInteractions, similarUsers);
 
         List<RecommendationDto> recommendations = new ArrayList<>();
 
         for (Project project : allProjects) {
-            // Исключаем свои проекты
             if (project.getAuthor() != null && project.getAuthor().getId().equals(user.getId()))
                 continue;
-
-            // Исключаем уже лайкнутые
-            if (isProjectLikedByUser(user, project))
+            if (hasUserAppliedToProject(currentUserInteractions, project.getId()))
                 continue;
 
             double skillScore = calculateSkillScore(user, project);
             double specScore = calculateSpecializationScore(user, project);
             double collabScore = collaborativeScores.getOrDefault(project.getId().longValue(), 0.0);
 
-            // Финальный расчет по оригинальной формуле
-            double finalScore = (skillScore * SKILL_WEIGHT) +
+            double baseScore = (skillScore * SKILL_WEIGHT) +
                     (specScore * SPECIALIZATION_WEIGHT) +
                     (collabScore * COLLABORATIVE_WEIGHT);
 
+            // Фактор свежести
+            long daysOld = ChronoUnit.DAYS.between(project.getCreatedAt().toLocalDate(), LocalDate.now());
+            daysOld = Math.max(0, daysOld);
+            double timeDecayMultiplier = Math.exp(-0.0231 * daysOld);
+
+            double finalScore = baseScore * timeDecayMultiplier;
+
             if (finalScore > MIN_SCORE) {
-                String explanation = buildExplanation(skillScore, specScore, collabScore);
+                String explanation = buildExplanation(skillScore, specScore, collabScore, timeDecayMultiplier);
                 recommendations.add(new RecommendationDto(
                         project,
                         finalScore,
@@ -77,14 +88,31 @@ public class RecommendationService {
         return recommendations;
     }
 
-    private Map<User, Double> findSimilarUsers(User currentUser) {
+    // Сбор всех сигналов пользователя
+    private Map<Integer, Double> getUserInteractions(User user) {
+        Map<Integer, Double> interactions = new HashMap<>();
+
+        // Просмотры проектов
+        Set<Integer> viewedIds = projectViewRepository.findViewedProjectIdsByUser(user.getId());
+        if (viewedIds != null && !viewedIds.isEmpty())
+            viewedIds.forEach(id -> interactions.merge(id, WEIGHT_VIEW, Double::sum));
+        // Избранное
+        if (user.getFavorites() != null)
+            user.getFavorites().forEach(f -> interactions.merge(f.getProject().getId(), WEIGHT_FAVORITE, Double::sum));
+        // Заявки
+        List<Application> applications = applicationRepository.findAllBySpecialistIdWithProjectData(user.getId());
+        if (applications != null)
+            applications.forEach(app -> interactions.merge(app.getProjectRole().getProject().getId(), WEIGHT_APPLY, Double::sum));
+
+        return interactions;
+    }
+
+    private boolean hasUserAppliedToProject(Map<Integer, Double> interactions, Integer projectId) {
+        return interactions.getOrDefault(projectId, 0.0) >= WEIGHT_APPLY;
+    }
+
+    private Map<User, Double> findSimilarUsers(User currentUser, Map<Integer, Double> currentUserInteractions) {
         Map<User, Double> similarUsers = new HashMap<>();
-
-        if (currentUser.getFavorites() == null || currentUser.getFavorites().isEmpty()) {
-            return findSimilarUsersBySpecialization(currentUser);
-        }
-
-        Set<Integer> currentUserLikes = extractProjectIds(currentUser.getFavorites());
         Set<Integer> currentUserSpecs = extractSpecializationIds(currentUser);
 
         List<User> allUsers = userRepository.findAll();
@@ -92,9 +120,12 @@ public class RecommendationService {
         for (User otherUser : allUsers) {
             if (otherUser.getId().equals(currentUser.getId())) continue;
 
+            Map<Integer, Double> otherUserInteractions = getUserInteractions(otherUser);
+            Set<Integer> otherUserSpecs = extractSpecializationIds(otherUser);
+
             double similarity = calculateUserSimilarity(
-                    currentUser, otherUser,
-                    currentUserLikes, currentUserSpecs
+                    currentUserInteractions, otherUserInteractions,
+                    currentUserSpecs, otherUserSpecs
             );
 
             if (similarity > 0.1)
@@ -103,77 +134,52 @@ public class RecommendationService {
         return sortSimilarUsers(similarUsers);
     }
 
-    private Map<User, Double> findSimilarUsersBySpecialization(User currentUser) {
-        Map<User, Double> similarUsers = new HashMap<>();
-        Set<Integer> currentUserSpecs = extractSpecializationIds(currentUser);
-
-        if (currentUserSpecs.isEmpty()) return similarUsers;
-
-        List<User> allUsers = userRepository.findAll();
-
-        for (User otherUser : allUsers) {
-            if (otherUser.getId().equals(currentUser.getId())) continue;
-
-            Set<Integer> otherUserSpecs = extractSpecializationIds(otherUser);
-            if (!otherUserSpecs.isEmpty()) {
-                Set<Integer> intersection = new HashSet<>(currentUserSpecs);
-                intersection.retainAll(otherUserSpecs);
-
-                if (!intersection.isEmpty()) {
-                    double similarity = (double) intersection.size() /
-                            Math.max(currentUserSpecs.size(), otherUserSpecs.size());
-                    if (similarity > 0.2) similarUsers.put(otherUser, similarity);
-                }
-            }
-        }
-        return similarUsers;
-    }
-
-    private double calculateUserSimilarity(User currentUser, User otherUser,
-                                           Set<Integer> currentUserLikes,
-                                           Set<Integer> currentUserSpecs) {
-        double likeSimilarity = 0.0;
+    private double calculateUserSimilarity(Map<Integer, Double> currentInteractions, Map<Integer, Double> otherInteractions,
+                                           Set<Integer> currentSpecs, Set<Integer> otherSpecs) {
+        double interactionSimilarity = 0.0;
         double specSimilarity = 0.0;
 
-        if (!currentUserLikes.isEmpty() && otherUser.getFavorites() != null) {
-            Set<Integer> otherUserLikes = extractProjectIds(otherUser.getFavorites());
-            if (!otherUserLikes.isEmpty()) {
-                Set<Integer> intersection = new HashSet<>(currentUserLikes);
-                intersection.retainAll(otherUserLikes);
-                Set<Integer> union = new HashSet<>(currentUserLikes);
-                union.addAll(otherUserLikes);
-                likeSimilarity = (double) intersection.size() / union.size();
+        if (!currentInteractions.isEmpty() && !otherInteractions.isEmpty()) {
+            double intersectionScore = 0.0;
+            double unionScore = 0.0;
+
+            Set<Integer> allProjectIds = new HashSet<>(currentInteractions.keySet());
+            allProjectIds.addAll(otherInteractions.keySet());
+
+            for (Integer id : allProjectIds) {
+                double val1 = currentInteractions.getOrDefault(id, 0.0);
+                double val2 = otherInteractions.getOrDefault(id, 0.0);
+                intersectionScore += Math.min(val1, val2);
+                unionScore += Math.max(val1, val2);
             }
+            interactionSimilarity = unionScore > 0 ? intersectionScore / unionScore : 0.0;
         }
 
-        Set<Integer> otherUserSpecs = extractSpecializationIds(otherUser);
-        if (!currentUserSpecs.isEmpty() && !otherUserSpecs.isEmpty()) {
-            Set<Integer> intersection = new HashSet<>(currentUserSpecs);
-            intersection.retainAll(otherUserSpecs);
-            specSimilarity = (double) intersection.size() /
-                    Math.max(currentUserSpecs.size(), otherUserSpecs.size());
+        if (!currentSpecs.isEmpty() && !otherSpecs.isEmpty()) {
+            Set<Integer> intersection = new HashSet<>(currentSpecs);
+            intersection.retainAll(otherSpecs);
+            specSimilarity = (double) intersection.size() / Math.max(currentSpecs.size(), otherSpecs.size());
         }
 
-        return (likeSimilarity * 0.6) + (specSimilarity * 0.4);
+        return (interactionSimilarity * 0.7) + (specSimilarity * 0.3);
     }
 
-    private Map<Long, Double> calculateCollaborativeScores(User currentUser, Map<User, Double> similarUsers) {
+    private Map<Long, Double> calculateCollaborativeScores(Map<Integer, Double> currentUserInteractions, Map<User, Double> similarUsers) {
         Map<Long, Double> scores = new HashMap<>();
         if (similarUsers.isEmpty()) return scores;
 
-        Set<Integer> currentUserLikes = extractProjectIds(currentUser.getFavorites());
-
         for (Map.Entry<User, Double> entry : similarUsers.entrySet()) {
             User similarUser = entry.getKey();
-            Double similarity = entry.getValue();
+            Double userSimilarity = entry.getValue();
 
-            if (similarUser.getFavorites() == null) continue;
+            Map<Integer, Double> similarUserInteractions = getUserInteractions(similarUser);
 
-            Set<Integer> similarUserLikes = extractProjectIds(similarUser.getFavorites());
-            for (Integer projectId : similarUserLikes) {
-                if (!currentUserLikes.contains(projectId)) {
-                    scores.merge(projectId.longValue(), similarity, Double::sum);
-                }
+            for (Map.Entry<Integer, Double> interaction : similarUserInteractions.entrySet()) {
+                Integer projectId = interaction.getKey();
+                Double interactionStrength = interaction.getValue();
+
+                if (currentUserInteractions.getOrDefault(projectId, 0.0) < WEIGHT_APPLY)
+                    scores.merge(projectId.longValue(), userSimilarity * interactionStrength, Double::sum);
             }
         }
         return normalizeScores(scores);
@@ -210,38 +216,47 @@ public class RecommendationService {
 
     private double calculateSpecializationScore(User user, Project project) {
         if (project.getRoles() == null || project.getRoles().isEmpty()) return 0.0;
+        if (user.getSpecializations() == null || user.getSpecializations().isEmpty()) return 0.0;
 
-        Set<Integer> userSpecIds = extractSpecializationIds(user);
-        if (userSpecIds.isEmpty()) return 0.0;
+        double maxRoleScore = 0.0;
 
-        Set<Integer> projectSpecIds = project.getRoles().stream()
-                .map(pr -> pr.getSpecialization().getId())
-                .collect(Collectors.toSet());
+        for (ProjectRole role : project.getRoles()) {
+            if (role.getFilledCount() >= role.getVacanciesCount()) continue;
 
-        Set<Integer> intersection = new HashSet<>(userSpecIds);
-        intersection.retainAll(projectSpecIds);
+            for (UserSpecialization userSpec : user.getSpecializations()) {
+                if (role.getSpecialization().getId().equals(userSpec.getSpecialization().getId())) {
 
-        if (intersection.isEmpty()) return 0.0;
+                    double currentRoleScore = 0.8;
 
-        boolean hasPrimarySpec = user.getSpecializations().stream()
-                .filter(us -> Boolean.TRUE.equals(us.getIsPrimary()))
-                .anyMatch(us -> projectSpecIds.contains(us.getSpecialization().getId()));
+                    Integer reqLevelId = role.getProficiencyLevel().getId();
+                    Integer userLevelId = userSpec.getProficiencyLevel().getId();
 
-        double baseScore = (double) intersection.size() / projectSpecIds.size();
-        return hasPrimarySpec ? Math.min(baseScore + 0.3, 1.0) : baseScore;
+                    if (reqLevelId.equals(userLevelId)) {
+                        currentRoleScore = 1.0;
+                    } else if (userLevelId > reqLevelId) {
+                        currentRoleScore = 0.9;
+                    } else {
+                        currentRoleScore = 0.5;
+                    }
+
+                    if (Boolean.TRUE.equals(userSpec.getIsPrimary()))
+                        currentRoleScore = Math.min(currentRoleScore + 0.15, 1.0);
+                    if (currentRoleScore > maxRoleScore)
+                        maxRoleScore = currentRoleScore;
+                }
+            }
+        }
+
+        return maxRoleScore;
     }
 
-    private String buildExplanation(double skillScore, double specScore, double collabScore) {
+    private String buildExplanation(double skillScore, double specScore, double collabScore, double decayMultiplier) {
         List<String> parts = new ArrayList<>();
-        if (skillScore > 0) parts.add(String.format("Навыки: %.0f%%", skillScore * 100));
-        if (specScore > 0) parts.add(String.format("Специализации: %.0f%%", specScore * 100));
-        if (collabScore > 0) parts.add(String.format("Похожие интересы: %.0f%%", collabScore * 100));
+        if (skillScore > 0) parts.add(String.format("Стек: %.0f%%", skillScore * 100));
+        if (specScore > 0) parts.add(String.format("Роль: %.0f%%", specScore * 100));
+        if (collabScore > 0) parts.add(String.format("Интересы: %.0f%%", collabScore * 100));
+        if (decayMultiplier < 0.8) parts.add("Архивный проект (снижен приоритет)");
         return String.join(", ", parts);
-    }
-
-    private Set<Integer> extractProjectIds(Set<Favorite> favorites) {
-        if (favorites == null) return Collections.emptySet();
-        return favorites.stream().map(f -> f.getProject().getId()).collect(Collectors.toSet());
     }
 
     private Set<Integer> extractSkillIds(User user) {
@@ -252,11 +267,6 @@ public class RecommendationService {
     private Set<Integer> extractSpecializationIds(User user) {
         if (user.getSpecializations() == null) return Collections.emptySet();
         return user.getSpecializations().stream().map(us -> us.getSpecialization().getId()).collect(Collectors.toSet());
-    }
-
-    private boolean isProjectLikedByUser(User user, Project project) {
-        if (user.getFavorites() == null) return false;
-        return user.getFavorites().stream().anyMatch(f -> f.getProject().getId().equals(project.getId()));
     }
 
     private Map<User, Double> sortSimilarUsers(Map<User, Double> similarUsers) {
@@ -274,17 +284,5 @@ public class RecommendationService {
         for (Map.Entry<Long, Double> entry : scores.entrySet())
             normalized.put(entry.getKey(), entry.getValue() / max);
         return normalized;
-    }
-
-    private void logUserSkills(User user) {
-        if (user.getSkills() != null && !user.getSkills().isEmpty()) {
-            user.getSkills().forEach(us -> log.debug("Навык: {} ID: {}", us.getSkill().getName(), us.getSkill().getId()));
-        }
-    }
-
-    private void logUserSpecializations(User user) {
-        if (user.getSpecializations() != null && !user.getSpecializations().isEmpty()) {
-            user.getSpecializations().forEach(us -> log.debug("Спец: {} ID: {}", us.getSpecialization().getName(), us.getSpecialization().getId()));
-        }
     }
 }

@@ -598,4 +598,14 @@ body::before {
 .password-strength-bar.strong {
     width: 100%;
     background-color: var(--secondary-color);
+
+
 }
+
+body.auth-page {
+    background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+.alert { transition: opacity 0.5s ease-out; }

@@ -14,22 +14,25 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
 
     boolean existsBySpecialistIdAndProjectRoleId(Integer specialistId, Integer projectRoleId);
 
-    // НОВЫЙ МЕТОД: Проверяет наличие заявки, статус которой НЕ является отклоненным
     boolean existsBySpecialistIdAndProjectRoleIdAndStatusNot(Integer specialistId, Integer projectRoleId, Application.Status status);
 
-    @Query("SELECT a FROM Application a " +
+    @Query("SELECT DISTINCT a FROM Application a " +
             "JOIN FETCH a.projectRole pr " +
             "JOIN FETCH pr.specialization " +
+            "LEFT JOIN FETCH pr.proficiencyLevel " +
             "JOIN FETCH pr.project p " +
             "JOIN FETCH p.author " +
+            "LEFT JOIN FETCH a.attachments " +
             "WHERE a.specialist.id = :specialistId " +
             "ORDER BY a.createdAt DESC")
     List<Application> findAllBySpecialistIdWithProjectData(@Param("specialistId") Integer specialistId);
 
-    @Query("SELECT a FROM Application a " +
+    @Query("SELECT DISTINCT a FROM Application a " +
             "JOIN FETCH a.specialist " +
             "JOIN FETCH a.projectRole pr " +
             "JOIN FETCH pr.specialization " +
+            "LEFT JOIN FETCH pr.proficiencyLevel " +
+            "LEFT JOIN FETCH a.attachments " +
             "WHERE pr.project.id = :projectId " +
             "ORDER BY a.createdAt DESC")
     List<Application> findAllByProjectId(@Param("projectId") Integer projectId);
@@ -37,7 +40,9 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
     @Query("SELECT a FROM Application a " +
             "JOIN FETCH a.projectRole pr " +
             "JOIN FETCH pr.specialization " +
+            "LEFT JOIN FETCH pr.proficiencyLevel " +
             "JOIN FETCH pr.project p " +
+            "LEFT JOIN FETCH a.attachments " +
             "WHERE a.id = :id")
     Optional<Application> findByIdWithProjectData(@Param("id") Integer id);
 

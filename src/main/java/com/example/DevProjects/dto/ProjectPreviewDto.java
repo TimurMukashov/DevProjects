@@ -18,8 +18,9 @@ public record ProjectPreviewDto(
         String statusColor,
         Integer viewsCount,
         Integer applicationsCount,
+        Integer authorId, // Добавлено поле ID автора
         String authorName,
-        String authorEmail, // Добавлено поле для проверки прав автора
+        String authorEmail,
         LocalDateTime createdAt,
         LocalDate deadline,
         List<RoleDto> roles,
@@ -30,11 +31,12 @@ public record ProjectPreviewDto(
 ) {
     @Builder
     public record RoleDto(
-            Integer id, // Добавлено поле ID для передачи в модальное окно на фронтенде
+            Integer id,
             String specialization,
             int vacancies,
             int filled,
             String title,
+            String proficiencyName,
             boolean isOpen
     ) {}
 
@@ -46,11 +48,12 @@ public record ProjectPreviewDto(
     public static ProjectPreviewDto fromProject(Project project) {
         List<RoleDto> roleDtos = project.getRoles().stream()
                 .map(r -> RoleDto.builder()
-                        .id(r.getId()) // Маппинг ID роли
+                        .id(r.getId())
                         .specialization(r.getSpecialization().getName())
                         .vacancies(r.getVacanciesCount())
                         .filled(r.getFilledCount())
-                        .title(r.getTitle())
+                        .title(r.getProficiencyLevel() != null ? r.getProficiencyLevel().getDisplayName() : "")
+                        .proficiencyName(r.getProficiencyLevel() != null ? r.getProficiencyLevel().getDisplayName() : "")
                         .isOpen(r.getFilledCount() < r.getVacanciesCount())
                         .build())
                 .toList();
@@ -68,8 +71,9 @@ public record ProjectPreviewDto(
                 .statusColor(mapColor(project.getStatus()))
                 .viewsCount(project.getViewsCount())
                 .applicationsCount(project.getApplicationsCount())
+                .authorId(project.getAuthor().getId()) // Маппинг ID автора
                 .authorName(project.getAuthorFullName())
-                .authorEmail(project.getAuthor().getEmail()) // Маппинг Email автора
+                .authorEmail(project.getAuthor().getEmail())
                 .createdAt(project.getCreatedAt())
                 .deadline(project.getDeadline())
                 .roles(roleDtos)

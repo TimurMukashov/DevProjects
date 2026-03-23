@@ -1,16 +1,22 @@
 let specializations = [];
 let skills = [];
+let proficiencyLevels = [];
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // 1. Параллельно загружаем справочники
     await loadReferenceData();
 
-    // 2. Инициализируем основные обработчики
-    document.getElementById('addRole').onclick = () => addRole();
-    document.getElementById('addSkill').onclick = () => addSkill();
+    document.getElementById('addRole').onclick = () => {
+        const row = addRole();
+        fillSelects(row);
+    };
+
+    document.getElementById('addSkill').onclick = () => {
+        const row = addSkill();
+        fillSkillSelect(row.querySelector('.skill-select'));
+    };
+
     document.getElementById('projectForm').onsubmit = prepareFormSubmit;
 
-    // 3. Заполняем форму данными (они уже гарантированно есть в window.initialProjectData)
     const data = window.initialProjectData;
     if (data && (data.roles?.length || data.skills?.length)) {
         fillExistingData(data);
@@ -19,12 +25,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function loadReferenceData() {
     try {
-        const [specs, skls] = await Promise.all([
+        const [specs, skls, levels] = await Promise.all([
             fetch('/api/profile-data/specializations').then(res => res.json()),
-            fetch('/api/profile-data/skills').then(res => res.json())
+            fetch('/api/profile-data/skills').then(res => res.json()),
+            fetch('/api/profile-data/proficiency-levels').then(res => res.json())
         ]);
         specializations = specs;
         skills = skls;
+        proficiencyLevels = levels;
     } catch (e) {
         console.error("Ошибка загрузки справочников:", e);
     }
@@ -34,9 +42,10 @@ function fillExistingData(data) {
     // Отрисовка ролей
     data.roles?.forEach(role => {
         const row = addRole();
+        fillSelects(row); // Заполняем dropdown-ы перед установкой значений
         row.querySelector('.role-id').value = role.id;
         row.querySelector('.role-specialization').value = role.specializationId;
-        row.querySelector('.role-title').value = role.title || '';
+        row.querySelector('.role-proficiency').value = role.proficiencyLevelId || '';
         row.querySelector('.role-vacancies').value = role.vacanciesCount || 1;
         row.querySelector('.role-description').value = role.description || '';
     });
@@ -44,6 +53,7 @@ function fillExistingData(data) {
     // Отрисовка навыков
     data.skills?.forEach(skill => {
         const row = addSkill();
+        fillSkillSelect(row.querySelector('.skill-select'));
         row.querySelector('.skill-id').value = skill.id;
         row.querySelector('.skill-select').value = skill.skillId;
         row.querySelector('.skill-required').checked = skill.required;
@@ -51,19 +61,31 @@ function fillExistingData(data) {
 }
 
 function addRole() {
-    const row = createFromTemplate('roleTemplate', 'roles-container');
-    const select = row.querySelector('.role-specialization');
-
-    select.add(new Option('Выберите специализацию...', ''));
-    specializations.forEach(s => select.add(new Option(s.name, s.id)));
-
-    row.querySelector('.remove-item').onclick = () => row.remove();
-    return row;
+    return createFromTemplate('roleTemplate', 'roles-container');
 }
 
 function addSkill() {
-    const row = createFromTemplate('skillTemplate', 'skills-container');
-    const select = row.querySelector('.skill-select');
+    return createFromTemplate('skillTemplate', 'skills-container');
+}
+
+function fillSelects(row) {
+    // Специализации
+    const specSelect = row.querySelector('.role-specialization');
+    if (specSelect.options.length === 0) {
+        specSelect.add(new Option('Выберите специализацию...', ''));
+        specializations.forEach(s => specSelect.add(new Option(s.name, s.id)));
+    }
+
+    // Уровни владения
+    const profSelect = row.querySelector('.role-proficiency');
+    if (profSelect.options.length === 0) {
+        profSelect.add(new Option('Выберите уровень...', ''));
+        proficiencyLevels.forEach(l => profSelect.add(new Option(l.displayName || l.name, l.id)));
+    }
+}
+
+function fillSkillSelect(select) {
+    if (select.options.length > 0) return;
 
     select.add(new Option('Выберите технологию...', ''));
     const grouped = skills.reduce((acc, s) => {
@@ -78,66 +100,73 @@ function addSkill() {
         grouped[cat].forEach(s => group.appendChild(new Option(s.name, s.id)));
         select.appendChild(group);
     });
-
-    row.querySelector('.remove-item').onclick = () => row.remove();
-    return row;
 }
 
-// Вспомогательная функция для создания элементов из шаблона
 function createFromTemplate(templateId, containerId) {
     const template = document.getElementById(templateId);
     const container = document.getElementById(containerId);
     const clone = template.content.cloneNode(true);
+    const newItem = clone.firstElementChild; // Получаем сам добавленный элемент
+
     container.appendChild(clone);
-    return container.lastElementChild;
+
+    // Привязываем кнопку удаления к новому элементу
+    newItem.querySelector('.remove-item').onclick = function() {
+        this.closest('.item-row').remove();
+    };
+
+    return newItem;
 }
 
 function prepareFormSubmit(e) {
     e.preventDefault();
 
-    // 1. Чистим старые скрытые поля (чтобы не дублировать при повторном клике)
-    document.querySelectorAll('#projectForm input[type="hidden"][name*="["]').forEach(el => el.remove());
+    // Чистим старые скрытые поля
+    const form = document.getElementById('projectForm');
+    form.querySelectorAll('input[type="hidden"][name^="roles["]').forEach(el => el.remove());
+    form.querySelectorAll('input[type="hidden"][name^="skills["]').forEach(el => el.remove());
 
-    // 2. Сбор РОЛЕЙ
-    document.querySelectorAll('.role-item').forEach((item, index) => {
+    // Сбор РОЛЕЙ
+    let roleIndex = 0;
+    document.querySelectorAll('.role-item').forEach((item) => {
         const id = item.querySelector('.role-id').value;
         const specId = item.querySelector('.role-specialization').value;
-        const title = item.querySelector('.role-title').value;
+        const proficiencyId = item.querySelector('.role-proficiency').value;
         const vacancies = item.querySelector('.role-vacancies').value;
         const description = item.querySelector('.role-description').value;
 
-        if (specId) {
-            // Имена должны быть roles[0].id, roles[0].specializationId и т.д.
-            if (id) addHiddenField(`roles[${index}].id`, id);
-            addHiddenField(`roles[${index}].specializationId`, specId);
-            addHiddenField(`roles[${index}].title`, title || '');
-            addHiddenField(`roles[${index}].vacanciesCount`, vacancies || 1);
-            addHiddenField(`roles[${index}].description`, description || '');
+        if (specId && proficiencyId) {
+            if (id) addHiddenField(`roles[${roleIndex}].id`, id, form);
+            addHiddenField(`roles[${roleIndex}].specializationId`, specId, form);
+            addHiddenField(`roles[${roleIndex}].proficiencyLevelId`, proficiencyId, form);
+            addHiddenField(`roles[${roleIndex}].vacanciesCount`, vacancies || 1, form);
+            addHiddenField(`roles[${roleIndex}].description`, description || '', form);
+            roleIndex++;
         }
     });
 
-    // 3. Сбор НАВЫКОВ
-    document.querySelectorAll('.skill-item').forEach((item, index) => {
+    // Сбор НАВЫКОВ
+    let skillIndex = 0;
+    document.querySelectorAll('.skill-item').forEach((item) => {
         const id = item.querySelector('.skill-id').value;
         const skillId = item.querySelector('.skill-select').value;
         const isRequired = item.querySelector('.skill-required').checked;
 
         if (skillId) {
-            // Имена должны быть skills[0].id, skills[0].skillId, skills[0].required
-            if (id) addHiddenField(`skills[${index}].id`, id);
-            addHiddenField(`skills[${index}].skillId`, skillId);
-            addHiddenField(`skills[${index}].required`, isRequired);
+            if (id) addHiddenField(`skills[${skillIndex}].id`, id, form);
+            addHiddenField(`skills[${skillIndex}].skillId`, skillId, form);
+            addHiddenField(`skills[${skillIndex}].required`, isRequired, form);
+            skillIndex++;
         }
     });
 
-    console.log("Форма подготовлена, отправляю на сервер...");
-    e.target.submit();
+    form.submit();
 }
 
-function addHiddenField(name, value) {
+function addHiddenField(name, value, form) {
     const input = document.createElement('input');
     input.type = 'hidden';
     input.name = name;
     input.value = value;
-    document.getElementById('projectForm').appendChild(input);
+    form.appendChild(input);
 }

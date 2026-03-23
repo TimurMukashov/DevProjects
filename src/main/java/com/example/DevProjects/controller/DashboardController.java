@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional; // Добавлено
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,12 +47,19 @@ public class DashboardController {
         return "dashboard/index";
     }
 
+    @GetMapping("/profile/{id}")
+    public String viewPublicProfile(@PathVariable Integer id, Model model) {
+        User user = userService.getUserById(id);
+        model.addAttribute("user", user);
+        model.addAttribute("roleName", user.getRole() != null ? user.getRole().getName() : "Пользователь");
+        model.addAttribute("isPublic", true);
+        return "dashboard/profile";
+    }
+
     @GetMapping("/projects")
     public String myProjects(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
         User user = userService.getUserWithAllData(currentUser.getUsername());
-
         List<ProjectPreviewDto> myProjects = projectService.getProjectsByAuthor(currentUser.getUsername());
-
         model.addAttribute("user", user);
         model.addAttribute("projects", myProjects);
         model.addAttribute("roleName", user.getRole() != null ? user.getRole().getName() : "Пользователь");
@@ -73,13 +81,12 @@ public class DashboardController {
     }
 
     @GetMapping("/favorites")
+    @Transactional(readOnly = true) // Добавлено для решения проблемы LazyInitializationException
     public String favorites(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
         User user = userService.getUserWithAllData(currentUser.getUsername());
-
         List<ProjectPreviewDto> favoriteProjects = user.getFavorites().stream()
                 .map(f -> ProjectPreviewDto.fromProject(f.getProject()))
                 .collect(Collectors.toList());
-
         model.addAttribute("user", user);
         model.addAttribute("projects", favoriteProjects);
         model.addAttribute("roleName", user.getRole() != null ? user.getRole().getName() : "Пользователь");
@@ -89,9 +96,9 @@ public class DashboardController {
     @GetMapping("/profile")
     public String profile(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
         User user = userService.getUserWithAllData(currentUser.getUsername());
-
         model.addAttribute("user", user);
         model.addAttribute("roleName", user.getRole() != null ? user.getRole().getName() : "Пользователь");
+        model.addAttribute("isPublic", false);
         return "dashboard/profile";
     }
 
@@ -99,12 +106,7 @@ public class DashboardController {
     public String editProfile(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
         User user = userService.getUserWithAllData(currentUser.getUsername());
         model.addAttribute("user", user);
-
-        ProfileEditDto profileEditDto = new ProfileEditDto(
-                user.getFirstName(),
-                user.getLastName(),
-                user.getBio()
-        );
+        ProfileEditDto profileEditDto = new ProfileEditDto(user.getFirstName(), user.getLastName(), user.getBio());
         model.addAttribute("profileEditDto", profileEditDto);
         return "dashboard/edit";
     }
@@ -116,11 +118,8 @@ public class DashboardController {
                                 RedirectAttributes redirectAttributes) {
         try {
             String avatarUrl = null;
-            if (avatar != null && !avatar.isEmpty())
-                avatarUrl = fileService.saveAvatar(avatar);
-
+            if (avatar != null && !avatar.isEmpty()) avatarUrl = fileService.saveAvatar(avatar);
             userService.updateProfile(currentUser.getUser().getId(), profileEditDto, avatarUrl);
-
             redirectAttributes.addFlashAttribute("successMessage", "Профиль успешно обновлен");
         } catch (Exception e) {
             log.error("Ошибка обновления профиля", e);
@@ -136,19 +135,15 @@ public class DashboardController {
                                       Model model) {
         User user = userService.getUserWithAllData(currentUser.getUsername());
         model.addAttribute("user", user);
-
         try {
             ProjectPreviewDto project = projectService.getProjectById(id);
-
             if (!project.authorEmail().equals(currentUser.getUsername())) {
                 return "redirect:/dashboard/projects";
             }
-
             List<Application> applications = applicationService.getProjectApplications(id, user.getId());
             model.addAttribute("project", project);
             model.addAttribute("applications", applications);
             model.addAttribute("roleName", user.getRole() != null ? user.getRole().getName() : "Пользователь");
-
         } catch (Exception e) {
             log.error("Ошибка загрузки заявок", e);
             return "redirect:/dashboard/projects";
@@ -189,43 +184,27 @@ public class DashboardController {
     @GetMapping("/my-applications")
     public String myApplications(@AuthenticationPrincipal CustomUserDetails currentUser, Model model) {
         User user = userService.getUserWithAllData(currentUser.getUsername());
-
         List<Application> applications = applicationService.getUserApplications(user.getId());
-
         model.addAttribute("user", user);
         model.addAttribute("applications", applications);
         model.addAttribute("roleName", user.getRole() != null ? user.getRole().getName() : "Пользователь");
-
         return "dashboard/my-applications";
     }
 
-    /**
-     * Обработчик клика по уведомлению.
-     * Помечает уведомление прочитанным и перенаправляет на нужную страницу.
-     */
     @GetMapping("/notifications/{id}/click")
     public String handleNotificationClick(@PathVariable Integer id, @AuthenticationPrincipal CustomUserDetails currentUser) {
         Notification notification = notificationService.getById(id);
-
-        // Проверка безопасности: уведомление принадлежит текущему пользователю
         if (!notification.getRecipient().getId().equals(currentUser.getUser().getId())) {
             return "redirect:/dashboard";
         }
-
         notificationService.markAsRead(id);
-
-        // Логика перенаправления
         if ("application_received".equals(notification.getType())) {
-            // Для автора: ведем на список заявок проекта
             Application app = applicationService.getById(notification.getTargetId());
             return "redirect:/dashboard/projects/" + app.getProjectRole().getProject().getId() + "/applications";
         }
-
         if ("application_status_changed".equals(notification.getType())) {
-            // Для кандидата: ведем в раздел "Мои заявки"
             return "redirect:/dashboard/my-applications";
         }
-
         return "redirect:/dashboard";
     }
 

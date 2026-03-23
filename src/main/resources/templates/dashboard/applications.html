@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Заявки на проект - DevProjects</title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link th:href="@{/css/style.css}" rel="stylesheet">
@@ -20,7 +22,9 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <th:block th:replace="~{fragments/notification-bell :: bell}"></th:block>
+
                 <li class="nav-item">
                     <a class="nav-link active" href="/dashboard">
                         <i class="bi bi-person-circle me-1"></i>Личный кабинет
@@ -48,10 +52,10 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold mb-1">Заявки от кандидатов</h2>
-            <p class="text-muted mb-0">Проект: <span th:text="${project.title}" class="fw-bold"></span></p>
+            <h2 class="fw-bold mb-1 text-violet">Заявки от кандидатов</h2>
+            <p class="text-muted mb-0">Проект: <span th:text="${project.title}" class="fw-bold text-violet"></span></p>
         </div>
-        <a href="/dashboard/projects" class="btn btn-outline-primary btn-sm px-3">
+        <a href="/dashboard/projects" class="btn btn-outline-violet btn-pill btn-sm px-4 py-2">
             <i class="bi bi-arrow-left me-1"></i> К моим проектам
         </a>
     </div>
@@ -63,43 +67,71 @@
 
     <div class="row" th:unless="${#lists.isEmpty(applications)}">
         <div class="col-md-6 mb-4" th:each="app : ${applications}">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <img th:src="${app.specialist.avatarUrl != null ? app.specialist.avatarUrl : '/img/default-avatar.png'}"
-                             class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;">
-                        <div>
-                            <h6 class="mb-0 fw-bold" th:text="${app.specialist.firstName + ' ' + app.specialist.lastName}"></h6>
-                            <small class="text-muted" th:text="${app.specialist.email}"></small>
-                        </div>
-                    </div>
+            <div class="card border shadow-sm h-100 d-flex flex-column" style="border-radius: 12px;">
+                <div class="card-body p-4 d-flex flex-column">
 
-                    <div class="mb-3">
-                        <span class="badge bg-light text-dark border">Роль: <span th:text="${app.projectRole.getSpecializationName()}"></span></span>
-                        <span class="badge" th:classappend="${app.status.name() == 'pending' ? 'bg-warning text-dark' : (app.status.name() == 'accepted' ? 'bg-success' : 'bg-danger')}"
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <a th:href="@{/dashboard/profile/{id}(id=${app.specialist.id})}" class="text-decoration-none d-flex align-items-center text-dark">
+                            <img th:src="${app.specialist.avatarUrl != null ? app.specialist.avatarUrl : '/img/default-avatar.png'}"
+                                 class="rounded-circle me-3 shadow-sm border" style="width: 50px; height: 50px; object-fit: cover;">
+                            <div>
+                                <h5 class="mb-0 fw-bold text-violet" th:text="${app.specialist.firstName + ' ' + app.specialist.lastName}"></h5>
+                                <small class="text-muted" th:text="${app.specialist.email}"></small>
+                            </div>
+                        </a>
+                        <span class="badge py-2 px-3 rounded-pill"
+                              th:classappend="${app.status.name() == 'pending' ? 'bg-warning text-dark' : (app.status.name() == 'accepted' ? 'bg-success' : 'bg-danger')}"
                               th:text="${app.status.name() == 'pending' ? 'Ожидает' : (app.status.name() == 'accepted' ? 'Принят' : 'Отклонен')}"></span>
                     </div>
 
-                    <div class="bg-light p-3 rounded mb-3">
-                        <small class="fw-bold d-block mb-1 text-uppercase text-muted" style="font-size: 0.75rem;">Сопроводительное письмо:</small>
-                        <p class="mb-0 small" th:text="${app.coverLetter != null && !app.coverLetter.isEmpty() ? app.coverLetter : 'Без письма'}"></p>
+                    <div class="mb-4">
+                        <span class="badge bg-light text-dark border px-3 py-2" style="font-size: 0.85rem;">
+                            Роль: <span class="fw-bold text-violet" th:text="${app.projectRole.specialization.name}"></span>
+                            (<span th:text="${app.projectRole.proficiencyLevel.displayName}"></span>)
+                        </span>
                     </div>
 
-                    <div class="d-flex gap-2" th:if="${app.status.name() == 'pending'}">
+                    <div class="bg-light p-3 rounded-3 shadow-sm border-0 mb-3 flex-grow-1" th:if="${app.coverLetter != null && !app.coverLetter.isEmpty()}">
+                        <small class="fw-bold d-block mb-2 text-uppercase text-muted" style="font-size: 0.75rem;">Сопроводительное письмо:</small>
+                        <p class="mb-0 text-dark" style="font-size: 0.95rem;" th:text="${app.coverLetter}"></p>
+                    </div>
+                    <div class="flex-grow-1" th:unless="${app.coverLetter != null && !app.coverLetter.isEmpty()}"></div>
+
+                    <div th:if="${!#lists.isEmpty(app.attachments)}" class="mb-4 pt-3 border-top">
+                        <small class="fw-bold d-block mb-2 text-muted text-uppercase" style="font-size: 0.75rem;">Вложения:</small>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a th:each="file : ${app.attachments}"
+                               th:href="${file.filePath}"
+                               class="btn btn-sm btn-outline-violet d-inline-flex align-items-center rounded-pill px-3 py-1"
+                               target="_blank">
+                                <i class="bi bi-file-earmark-check me-2"></i>
+                                <span th:text="${file.fileName}"></span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-auto pt-3 border-top" th:if="${app.status.name() == 'pending'}">
                         <form th:action="@{/dashboard/applications/{id}/accept(id=${app.id})}" method="post" class="flex-grow-1">
                             <input type="hidden" name="projectId" th:value="${project.id}">
-                            <button type="submit" class="btn btn-success btn-sm w-100">Принять</button>
+                            <button type="submit" class="btn btn-success rounded-pill w-100 fw-bold py-2 shadow-sm">Принять</button>
                         </form>
                         <form th:action="@{/dashboard/applications/{id}/reject(id=${app.id})}" method="post" class="flex-grow-1">
                             <input type="hidden" name="projectId" th:value="${project.id}">
-                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">Отклонить</button>
+                            <button type="submit" class="btn btn-outline-danger rounded-pill w-100 fw-bold py-2">Отклонить</button>
                         </form>
                     </div>
+
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<footer class="bg-light py-4 mt-5">
+    <div class="container text-center">
+        <p class="text-muted mb-0">&copy; 2026 DevProjects.</p>
+    </div>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

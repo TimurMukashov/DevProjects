@@ -19,6 +19,7 @@
     --transition: all 0.3s ease;
 }
 
+/* Profile Card */
 .profile-card {
     border: none;
     border-radius: 20px;
@@ -42,7 +43,6 @@
     display: inline-block;
 }
 
-/* Точка онлайн-статуса */
 .profile-avatar::after {
     content: '';
     position: absolute;
@@ -83,6 +83,7 @@
     border-radius: 50%;
 }
 
+/* Welcome Card */
 .welcome-card {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     color: white;
@@ -170,6 +171,7 @@
     letter-spacing: 0.5px;
 }
 
+/* Action Card */
 .action-card {
     border: none;
     border-radius: 20px;
@@ -227,6 +229,7 @@
     margin-bottom: 1.5rem;
 }
 
+/* Dashboard Card */
 .dashboard-card {
     background: white;
     border: 1px solid var(--border-color);
@@ -256,6 +259,7 @@
     color: var(--secondary-color);
 }
 
+/* Lists */
 .specializations-list, .skills-list {
     max-height: 350px;
     overflow-y: auto;
@@ -319,6 +323,7 @@
     font-size: 0.95rem;
 }
 
+/* Badges */
 .badge.bg-primary {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
     color: white;
@@ -336,6 +341,7 @@
     color: white;
 }
 
+/* Profile Avatar Large */
 .profile-avatar-large {
     position: relative;
     display: inline-block;
@@ -368,6 +374,7 @@
     border-color: var(--secondary-color);
 }
 
+/* Tables */
 .table {
     font-size: 1rem;
 }
@@ -396,6 +403,7 @@
     font-size: 1.1rem;
 }
 
+/* Dashboard Card Empty State */
 .dashboard-card .text-center.text-muted {
     padding: 2rem;
 }
@@ -423,20 +431,7 @@
     font-size: 0.9rem;
 }
 
-footer {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
-    color: white !important;
-    margin-top: 4rem !important;
-    padding: 2rem 0 !important;
-    border-top: 4px solid var(--secondary-color);
-}
-
-footer .text-muted {
-    color: rgba(255, 255, 255, 0.9) !important;
-    font-size: 1rem;
-}
-
-/* Выравнивание левой колонки профиля */
+/* Profile Sidebar */
 .profile-sidebar {
     display: flex;
     flex-direction: column;
@@ -444,6 +439,98 @@ footer .text-muted {
     text-align: center;
 }
 
+/* Dashboard Actions */
+.dashboard-actions .btn {
+    border-radius: 2rem;
+    padding: 0.6rem 2rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.dashboard-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stat-item {
+    animation: fadeInUp 0.5s ease-out;
+    animation-fill-mode: both;
+}
+
+.stat-item:nth-child(1) { animation-delay: 0.1s; }
+.stat-item:nth-child(2) { animation-delay: 0.2s; }
+.stat-item:nth-child(3) { animation-delay: 0.3s; }
+
+.dashboard-card, .action-card, .profile-card {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.badge.bg-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: white !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 30px !important;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: white !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 30px !important;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    color: white !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 30px !important;
+}
+
+.skill-stats {
+    display: flex; /* Убедимся, что флекс включен */
+    gap: 12px;
+    justify-content: flex-end;
+    align-items: center;
+    /* Убираем фиксированную ширину контейнера, если она была,
+       чтобы он мог расширяться влево */
+}
+
+.skill-badge {
+    /* Заменяем фиксированную ширину на минимальную */
+    min-width: 110px;
+    width: auto;
+
+    /* Добавляем боковые отступы, чтобы текст не лип к краям */
+    padding: 4px 12px;
+
+    text-align: center;
+    display: inline-block;
+    flex-shrink: 0;
+    white-space: nowrap; /* Чтобы слово не разрывалось */
+}
+
+.skill-years {
+    /* Оставляем как есть, 60px обычно хватает для "10 лет" */
+    width: 65px;
+    text-align: right;
+    white-space: nowrap;
+    flex-shrink: 0;
+    color: var(--text-muted);
+}
+
+/* Responsive */
 @media (max-width: 992px) {
     .stats-grid {
         gap: 1rem;
@@ -547,78 +634,4 @@ footer .text-muted {
     .table th {
         font-size: 0.85rem;
     }
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.stat-item {
-    animation: fadeInUp 0.5s ease-out;
-    animation-fill-mode: both;
-}
-
-.stat-item:nth-child(1) { animation-delay: 0.1s; }
-.stat-item:nth-child(2) { animation-delay: 0.2s; }
-.stat-item:nth-child(3) { animation-delay: 0.3s; }
-
-.dashboard-card, .action-card, .profile-card {
-    animation: fadeInUp 0.5s ease-out;
-}
-
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--bg-light);
-}
-
-::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
-    border-radius: 8px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-}
-
-.dashboard-actions .btn {
-    border-radius: 2rem;
-    padding: 0.6rem 2rem;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.dashboard-actions .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.btn-outline-primary {
-    border-color: #6366f1;
-    color: #6366f1;
-}
-
-.btn-outline-primary:hover {
-    background-color: #6366f1;
-    border-color: #6366f1;
-    color: white;
-}
-
-.btn-success {
-    background-color: #10b981;
-    border-color: #10b981;
-}
-
-.btn-success:hover {
-    background-color: #059669;
-    border-color: #059669;
 }

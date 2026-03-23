@@ -29,6 +29,10 @@ public class UserSpecialization {
     @JoinColumn(name = "specialization_id", nullable = false)
     private Specialization specialization;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "proficiency_level_id", nullable = false)
+    private ProficiencyLevel proficiencyLevel;
+
     @Column(name = "years_of_experience", precision = 4, scale = 1)
     private BigDecimal yearsOfExperience;
 
@@ -43,6 +47,10 @@ public class UserSpecialization {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public String getProficiencyDisplayName() {
+        return proficiencyLevel != null ? proficiencyLevel.getDisplayName() : "";
+    }
 
     @Data
     @NoArgsConstructor

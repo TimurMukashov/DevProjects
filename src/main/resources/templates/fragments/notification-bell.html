@@ -1,65 +1,57 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head></head>
+
 <body>
 
 <li th:fragment="bell" class="nav-item dropdown me-2" sec:authorize="isAuthenticated()">
-  <a class="nav-link position-relative" href="#" id="bellDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+  <a class="nav-link position-relative px-2" href="#" id="bellDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     <i class="bi bi-bell fs-5"></i>
     <span th:if="${unreadNotificationsCount > 0}"
-          class="position-absolute top-1 start-100 translate-middle badge rounded-pill bg-danger"
-          style="font-size: 0.65rem; padding: 0.25em 0.5em;"
+          class="position-absolute bg-danger text-white border border-2 border-white"
+          style="width: 18px; height: 18px; font-size: 0.65rem; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 50%; top: 4px; right: 0px; padding: 0;"
           th:text="${unreadNotificationsCount}">
-        </span>
+    </span>
   </a>
-  <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-0" aria-labelledby="bellDropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
-    <li class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+  <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 py-0 overflow-hidden" aria-labelledby="bellDropdown" style="width: 340px;">
+    <li class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
       <h6 class="mb-0 fw-bold">Уведомления</h6>
     </li>
-    <li th:if="${#lists.isEmpty(recentNotifications)}" class="p-4 text-center">
-      <small class="text-muted">У вас нет новых уведомлений</small>
-    </li>
-    <li th:each="note : ${recentNotifications}" class="border-bottom notification-item">
-      <a th:href="@{/dashboard/notifications/{id}/click(id=${note.id})}"
-         class="dropdown-item p-3 text-decoration-none"
-         th:classappend="${!note.isRead} ? 'bg-light' : ''"
-         style="white-space: normal;">
-        <div class="fw-bold small mb-1 text-dark" th:text="${note.title}">Заголовок</div>
-        <div class="text-muted small" th:text="${note.message}">Текст сообщения</div>
-        <div class="text-end mt-2" style="font-size: 0.7rem;">
-          <span class="text-muted" th:text="${#temporals.format(note.createdAt, 'dd.MM HH:mm')}"></span>
+
+    <div style="max-height: 400px; overflow-y: auto;">
+      <li th:if="${#lists.isEmpty(recentNotifications)}" class="p-4 text-center">
+        <small class="text-muted">У вас нет новых уведомлений</small>
+      </li>
+
+      <li th:each="note : ${recentNotifications}" class="border-bottom notification-item"
+          th:classappend="${!note.isRead} ? 'bg-light' : ''">
+        <div class="p-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="fw-bold text-dark" th:text="${note.title}">Заголовок</small>
+            <small class="text-muted" style="font-size: 0.7rem;"
+                   th:text="${#temporals.format(note.createdAt, 'dd.MM HH:mm')}"></small>
+          </div>
+
+          <div class="small text-muted mb-2">
+            <a th:if="${note.senderId != null}"
+               th:href="@{/dashboard/profile/{id}(id=${note.senderId})}"
+               class="fw-bold text-violet text-decoration-none"
+               th:text="${note.senderName}">Имя</a>
+            <span th:text="${' ' + note.message}"></span>
+          </div>
+
+          <div class="text-end">
+            <a th:href="@{/dashboard/notifications/{id}/click(id=${note.id})}"
+               class="btn btn-sm text-violet p-0 text-decoration-none fw-bold" style="font-size: 0.75rem;">
+              Подробнее <i class="bi bi-chevron-right"></i>
+            </a>
+          </div>
         </div>
-      </a>
-    </li>
+      </li>
+    </div>
   </ul>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const bell = document.getElementById('bellDropdown');
-        if (bell) {
-            bell.addEventListener('click', function() {
-                const badge = this.querySelector('.badge');
-
-                if (!badge || badge.style.display === 'none') return;
-
-                const token = document.querySelector('meta[name=\"_csrf\"]')?.content;
-                const header = document.querySelector('meta[name=\"_csrf_header\"]')?.content;
-
-                fetch('/dashboard/notifications/read', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [header]: token
-                    }
-                }).then(response => {
-                    if (response.ok) {
-                        badge.style.display = 'none';
-                    }
-                });
-            });
-        }
-    });
-  </script>
+  <script th:src="@{/js/notification.js}"></script>
 </li>
 
 </body>

@@ -26,6 +26,7 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final ProjectRoleRepository projectRoleRepository;
     private final ProjectSkillRepository projectSkillRepository;
+    private final ProficiencyLevelRepository proficiencyLevelRepository; // ДОБАВЛЕНО
 
     @Transactional(readOnly = true)
     public Page<ProjectPreviewDto> getOpenProjects(int page, int size) {
@@ -83,10 +84,14 @@ public class ProjectService {
             project.setRoles(dto.roles().stream().map(roleDto -> {
                 Specialization spec = specializationRepository.findById(roleDto.specializationId())
                         .orElseThrow(() -> new RuntimeException("Специализация не найдена"));
+
+                ProficiencyLevel level = proficiencyLevelRepository.findById(roleDto.proficiencyLevelId())
+                        .orElseThrow(() -> new RuntimeException("Уровень владения не найден"));
+
                 return ProjectRole.builder()
                         .project(project)
                         .specialization(spec)
-                        .title(roleDto.title())
+                        .proficiencyLevel(level)
                         .description(roleDto.description())
                         .vacanciesCount(roleDto.vacanciesCount())
                         .build();
@@ -119,24 +124,21 @@ public class ProjectService {
         project.setStatus(Project.ProjectStatus.completed);
     }
 
-    // --- ОБНОВЛЕННЫЙ МЕТОД: Исправлено заполнение коллекций DTO ---
     @Transactional(readOnly = true)
     public ProjectEditDto getProjectForEdit(Integer id) {
         Project project = projectRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new RuntimeException("Проект не найден"));
 
-        // Явно маппим роли из сущностей в DTO
         List<ProjectEditDto.RoleDto> roleDtos = project.getRoles().stream()
                 .map(r -> new ProjectEditDto.RoleDto(
                         r.getId(),
                         r.getSpecialization().getId(),
-                        r.getTitle(),
+                        r.getProficiencyLevel() != null ? r.getProficiencyLevel().getId() : null, // ЗАМЕНЕНО: r.getTitle()
                         r.getDescription(),
                         r.getVacanciesCount()
                 ))
                 .collect(Collectors.toList());
 
-        // Явно маппим навыки из сущностей в DTO
         List<ProjectEditDto.SkillDto> skillDtos = project.getRequiredSkills().stream()
                 .map(s -> new ProjectEditDto.SkillDto(
                         s.getId(),
@@ -161,54 +163,22 @@ public class ProjectService {
         Project project = projectRepository.findByIdWithDetails(dto.id())
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
-        // Проверка прав
         if (!project.getAuthor().getEmail().equals(authorEmail)) {
             throw new RuntimeException("Нет прав на редактирование");
         }
 
-        // Обновляем основные поля
         project.setTitle(dto.title());
         project.setDescription(dto.description());
         project.setDeadline(dto.deadline());
-
-        // Обновляем РОЛИ: Очищаем старые, добавляем из DTO
-        projectRoleRepository.deleteAll(project.getRoles());
-        project.getRoles().clear();
-
-        if (dto.roles() != null) {
-            dto.roles().forEach(rd -> {
-                Specialization spec = specializationRepository.findById(rd.specializationId())
-                        .orElseThrow(() -> new RuntimeException("Spec not found"));
-                project.getRoles().add(ProjectRole.builder()
-                        .project(project)
-                        .specialization(spec)
-                        .title(rd.title())
-                        .description(rd.description())
-                        .vacanciesCount(rd.vacanciesCount())
-                        .build());
-            });
-        }
-
-        // Обновляем НАВЫКИ: Очищаем старые, добавляем из DTO
-        projectSkillRepository.deleteAll(project.getRequiredSkills());
-        project.getRequiredSkills().clear();
-
-        if (dto.skills() != null) {
-            dto.skills().forEach(sd -> {
-                Skill skill = skillRepository.findById(sd.skillId())
-                        .orElseThrow(() -> new RuntimeException("Skill not found"));
-                project.getRequiredSkills().add(ProjectSkill.builder()
-                        .project(project)
-                        .skill(skill)
-                        .isRequired(sd.required())
-                        .build());
-            });
-        }
+        updateRoles(project, dto.roles());
+        updateSkills(project, dto.skills());
 
         projectRepository.save(project);
     }
 
     private void updateRoles(Project project, List<ProjectEditDto.RoleDto> roleDtos) {
+        if (roleDtos == null) return;
+
         Map<Integer, ProjectRole> existingRoles = project.getRoles().stream()
                 .filter(r -> r.getId() != null)
                 .collect(Collectors.toMap(ProjectRole::getId, Function.identity()));
@@ -228,21 +198,30 @@ public class ProjectService {
             Specialization spec = specializationRepository.findById(rd.specializationId())
                     .orElseThrow(() -> new RuntimeException("Специализация не найдена"));
 
+            ProficiencyLevel level = proficiencyLevelRepository.findById(rd.proficiencyLevelId())
+                    .orElseThrow(() -> new RuntimeException("Уровень не найден"));
+
             if (rd.id() != null && existingRoles.containsKey(rd.id())) {
                 ProjectRole r = existingRoles.get(rd.id());
                 r.setSpecialization(spec);
-                r.setTitle(rd.title());
+                r.setProficiencyLevel(level);
                 r.setDescription(rd.description());
                 r.setVacanciesCount(rd.vacanciesCount());
             } else {
                 project.getRoles().add(ProjectRole.builder()
-                        .project(project).specialization(spec).title(rd.title())
-                        .description(rd.description()).vacanciesCount(rd.vacanciesCount()).build());
+                        .project(project)
+                        .specialization(spec)
+                        .proficiencyLevel(level)
+                        .description(rd.description())
+                        .vacanciesCount(rd.vacanciesCount())
+                        .build());
             }
         }
     }
 
     private void updateSkills(Project project, List<ProjectEditDto.SkillDto> skillDtos) {
+        if (skillDtos == null) return;
+
         Map<Integer, ProjectSkill> existingSkills = project.getRequiredSkills().stream()
                 .filter(s -> s.getId() != null)
                 .collect(Collectors.toMap(ProjectSkill::getId, Function.identity()));
@@ -267,8 +246,16 @@ public class ProjectService {
                 s.setSkill(skill);
                 s.setIsRequired(sd.required());
             } else {
-                project.getRequiredSkills().add(ProjectSkill.builder()
-                        .project(project).skill(skill).isRequired(sd.required()).build());
+                boolean alreadyExists = project.getRequiredSkills().stream()
+                        .anyMatch(ps -> ps.getSkill().getId().equals(skill.getId()));
+
+                if (!alreadyExists) {
+                    project.getRequiredSkills().add(ProjectSkill.builder()
+                            .project(project)
+                            .skill(skill)
+                            .isRequired(sd.required())
+                            .build());
+                }
             }
         }
     }

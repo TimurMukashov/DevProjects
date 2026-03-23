@@ -1,5 +1,6 @@
 let specializations = [];
 let skills = [];
+let proficiencyLevels = []; // НОВОЕ: переменная для уровней
 
 document.addEventListener('DOMContentLoaded', function() {
     loadReferenceData();
@@ -12,10 +13,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function loadReferenceData() {
     Promise.all([
         fetch('/api/profile-data/specializations').then(res => res.json()),
-        fetch('/api/profile-data/skills').then(res => res.json())
-    ]).then(([specs, skls]) => {
+        fetch('/api/profile-data/skills').then(res => res.json()),
+        fetch('/api/profile-data/proficiency-levels').then(res => res.json()) // НОВОЕ: загрузка уровней
+    ]).then(([specs, skls, levels]) => {
         specializations = specs;
         skills = skls;
+        proficiencyLevels = levels; // Сохраняем уровни
 
         // Добавляем по одной пустой строке сразу для удобства
         addRole();
@@ -29,7 +32,12 @@ function addRole() {
     document.getElementById('roles-container').appendChild(clone);
 
     const newItem = document.querySelector('.role-item:last-child');
+
+    // Заполняем специализации
     fillSelect(newItem.querySelector('.role-specialization'), specializations);
+
+    // НОВОЕ: Заполняем уровни владения
+    fillSelect(newItem.querySelector('.role-proficiency'), proficiencyLevels);
 
     newItem.querySelector('.remove-item').addEventListener('click', () => newItem.remove());
 }
@@ -45,8 +53,19 @@ function addSkill() {
     newItem.querySelector('.remove-item').addEventListener('click', () => newItem.remove());
 }
 
+// Универсальная функция заполнения простых списков
 function fillSelect(select, data) {
-    data.forEach(item => select.add(new Option(item.name, item.id)));
+    // Добавляем пустой вариант по умолчанию
+    const defaultOption = new Option("Выберите...", "");
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    select.add(defaultOption);
+
+    data.forEach(item => {
+        // Используем item.displayName (для уровней) или item.name (для специализаций)
+        const label = item.displayName || item.name;
+        select.add(new Option(label, item.id));
+    });
 }
 
 function fillSkillSelect(select) {
@@ -76,19 +95,19 @@ function prepareFormSubmit(e) {
     // Сбор ролей
     document.querySelectorAll('.role-item').forEach((item, index) => {
         const specId = item.querySelector('.role-specialization').value;
-        const title = item.querySelector('.role-title').value;
+        const proficiencyId = item.querySelector('.role-proficiency').value; // ИЗМЕНЕНО: получаем ID уровня
         const vacancies = item.querySelector('.role-vacancies').value;
         const desc = item.querySelector('.role-description').value;
 
-        if (specId) {
+        if (specId && proficiencyId) {
             addHiddenField(`roles[${index}].specializationId`, specId);
-            addHiddenField(`roles[${index}].title`, title);
+            addHiddenField(`roles[${index}].proficiencyLevelId`, proficiencyId); // ИЗМЕНЕНО: передаем proficiencyLevelId
             addHiddenField(`roles[${index}].vacanciesCount`, vacancies);
             addHiddenField(`roles[${index}].description`, desc);
         }
     });
 
-    // Сбор навыков (с проверкой на дубли)
+    // Сбор навыков
     document.querySelectorAll('.skill-item').forEach((item, index) => {
         const skillId = item.querySelector('.skill-select').value;
         const isRequired = item.querySelector('.skill-required').checked;

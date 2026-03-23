@@ -48,7 +48,6 @@ public class User {
     @Builder.Default
     private Set<Project> projects = new HashSet<>();
 
-    // ИСПРАВЛЕНО: mappedBy = "user" заменено на mappedBy = "specialist"
     @OneToMany(mappedBy = "specialist", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<Application> applications = new HashSet<>();

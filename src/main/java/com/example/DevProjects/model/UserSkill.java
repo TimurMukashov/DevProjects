@@ -6,7 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.io.Serializable;
-import java.math.BigDecimal;  // Добавить импорт
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -29,10 +29,6 @@ public class UserSkill {
     @JoinColumn(name = "skill_id", nullable = false)
     private Skill skill;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "proficiency_level_id", nullable = false)
-    private ProficiencyLevel proficiencyLevel;
-
     @Column(name = "years_of_experience", precision = 4, scale = 1)
     private BigDecimal yearsOfExperience;
 
@@ -43,10 +39,6 @@ public class UserSkill {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    public String getProficiencyDisplayName() {
-        return proficiencyLevel != null ? proficiencyLevel.getDisplayName() : "";
-    }
 
     @Data
     @NoArgsConstructor

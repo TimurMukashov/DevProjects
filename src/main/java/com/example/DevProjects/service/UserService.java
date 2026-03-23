@@ -60,7 +60,7 @@ public class UserService {
                 .firstName(registrationDto.getFirstName())
                 .lastName(registrationDto.getLastName())
                 .bio(registrationDto.getBio())
-                .avatarUrl(avatarUrl != null ? avatarUrl : "/img/default-avatar.png") // Дефолт, если не выбрано
+                .avatarUrl(avatarUrl != null ? avatarUrl : "/img/default-avatar.png")
                 .role(defaultRole)
                 .projects(new HashSet<>())
                 .applications(new HashSet<>())
@@ -76,9 +76,13 @@ public class UserService {
                     Specialization specialization = specializationRepository.findById(specDto.getSpecializationId())
                             .orElseThrow(() -> new RuntimeException("Специализация не найдена ID: " + specDto.getSpecializationId()));
 
+                    ProficiencyLevel level = proficiencyLevelRepository.findById(specDto.getProficiencyLevelId())
+                            .orElseThrow(() -> new RuntimeException("Уровень не найден ID: " + specDto.getProficiencyLevelId()));
+
                     UserSpecialization us = UserSpecialization.builder()
                             .user(user)
                             .specialization(specialization)
+                            .proficiencyLevel(level)
                             .yearsOfExperience(specDto.getYearsOfExperience() != null ?
                                     BigDecimal.valueOf(specDto.getYearsOfExperience()) : BigDecimal.ZERO)
                             .isPrimary(specDto.isPrimary())
@@ -92,17 +96,13 @@ public class UserService {
         if (registrationDto.getSkills() != null) {
             Set<Integer> seenSkills = new HashSet<>();
             for (var skillDto : registrationDto.getSkills()) {
-                if (skillDto.getSkillId() != null && skillDto.getProficiencyLevelId() != null && seenSkills.add(skillDto.getSkillId())) {
+                if (skillDto.getSkillId() != null && seenSkills.add(skillDto.getSkillId())) {
                     Skill skill = skillRepository.findById(skillDto.getSkillId())
                             .orElseThrow(() -> new RuntimeException("Навык не найден ID: " + skillDto.getSkillId()));
-
-                    ProficiencyLevel level = proficiencyLevelRepository.findById(skillDto.getProficiencyLevelId())
-                            .orElseThrow(() -> new RuntimeException("Уровень не найден ID: " + skillDto.getProficiencyLevelId()));
 
                     UserSkill us = UserSkill.builder()
                             .user(user)
                             .skill(skill)
-                            .proficiencyLevel(level)
                             .yearsOfExperience(skillDto.getYearsOfExperience() != null ?
                                     BigDecimal.valueOf(skillDto.getYearsOfExperience()) : BigDecimal.ZERO)
                             .build();
@@ -119,6 +119,12 @@ public class UserService {
     @Transactional(readOnly = true)
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserById(Integer id) {
+        return userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
     }
 

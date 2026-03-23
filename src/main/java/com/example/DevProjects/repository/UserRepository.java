@@ -19,9 +19,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "LEFT JOIN FETCH u.role " +
             "LEFT JOIN FETCH u.specializations us " +
             "LEFT JOIN FETCH us.specialization " +
+            "LEFT JOIN FETCH us.proficiencyLevel " +
             "LEFT JOIN FETCH u.skills sk " +
             "LEFT JOIN FETCH sk.skill " +
-            "LEFT JOIN FETCH sk.proficiencyLevel " +
             "LEFT JOIN FETCH u.projects " +
             "LEFT JOIN FETCH u.applications " +
             "LEFT JOIN FETCH u.favorites fav " +

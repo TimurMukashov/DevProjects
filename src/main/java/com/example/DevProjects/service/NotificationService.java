@@ -17,7 +17,9 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
 
     @Transactional
-    public void sendNotification(User recipient, String type, String title, String message, String targetType, Integer targetId) {
+    public void sendNotification(User recipient, String type, String title, String message,
+                                 String targetType, Integer targetId,
+                                 Integer senderId, String senderName) {
         Notification notification = Notification.builder()
                 .recipient(recipient)
                 .type(type)
@@ -25,6 +27,8 @@ public class NotificationService {
                 .message(message)
                 .targetType(targetType)
                 .targetId(targetId)
+                .senderId(senderId)
+                .senderName(senderName)
                 .isRead(false)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -41,14 +45,12 @@ public class NotificationService {
         return notificationRepository.findTop5ByRecipientIdOrderByCreatedAtDesc(userId);
     }
 
-    // ДОБАВЛЕНО: Получение уведомления по ID
     @Transactional(readOnly = true)
     public Notification getById(Integer id) {
         return notificationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Уведомление не найдено"));
     }
 
-    // ДОБАВЛЕНО: Пометка одного уведомления как прочитанного
     @Transactional
     public void markAsRead(Integer id) {
         notificationRepository.findById(id).ifPresent(n -> {

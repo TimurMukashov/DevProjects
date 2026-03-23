@@ -17,11 +17,22 @@ public class FileService {
     @Value("${app.upload.avatar-path}")
     private String avatarPath;
 
+    @Value("${app.upload.document-path}")
+    private String documentPath;
+
     public String saveAvatar(MultipartFile file) throws IOException {
+        return saveFile(file, avatarPath, "/uploads/avatars/");
+    }
+
+    public String saveDocument(MultipartFile file) throws IOException {
+        return saveFile(file, documentPath, "/uploads/documents/");
+    }
+
+    private String saveFile(MultipartFile file, String baseDir, String urlPrefix) throws IOException {
         if (file == null || file.isEmpty())
             return null;
 
-        Path uploadPath = Paths.get(avatarPath);
+        Path uploadPath = Paths.get(baseDir);
         if (!Files.exists(uploadPath))
             Files.createDirectories(uploadPath);
 
@@ -29,6 +40,7 @@ public class FileService {
         Path filePath = uploadPath.resolve(fileName);
 
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        return "/uploads/avatars/" + fileName;
+
+        return urlPrefix + fileName;
     }
 }
